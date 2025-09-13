@@ -212,7 +212,7 @@ export const generateAIResponse = async (req, res, next) => {
       assets: assets.map(a => ({
         type: a.type,
         name: a.name,
-        currentValue: a.currentValue,
+        currentValue: a.balance || a.currentValue || 0,
         isLiquid: a.isLiquid
       })),
       liabilities: liabilities.map(l => ({
@@ -331,7 +331,7 @@ const generateFallbackResponse = (message, userData) => {
   const lowerMessage = message.toLowerCase();
   
   // Calculate basic financial metrics
-  const totalAssets = userData.assets.reduce((sum, asset) => sum + asset.currentValue, 0);
+  const totalAssets = userData.assets.reduce((sum, asset) => sum + (asset.currentValue || 0), 0);
   const totalLiabilities = userData.liabilities.reduce((sum, liability) => sum + liability.currentBalance, 0);
   const netWorth = totalAssets - totalLiabilities;
   
@@ -404,7 +404,7 @@ export const getFinancialInsights = async (req, res, next) => {
     ]);
     
     // Calculate total assets and liabilities
-    const totalAssets = assets.reduce((sum, asset) => sum + (asset.currentValue || 0), 0);
+    const totalAssets = assets.reduce((sum, asset) => sum + (asset.balance || asset.currentValue || 0), 0);
     const totalLiabilities = liabilities.reduce((sum, liability) => sum + (liability.currentBalance || 0), 0);
     const netWorth = totalAssets - totalLiabilities;
     
@@ -501,7 +501,7 @@ export const generateFinancialForecast = async (req, res, next) => {
     ]);
     
     // Calculate current net worth
-    const totalAssets = assets.reduce((sum, asset) => sum + (asset.currentValue || 0), 0);
+    const totalAssets = assets.reduce((sum, asset) => sum + (asset.balance || asset.currentValue || 0), 0);
     const totalLiabilities = liabilities.reduce((sum, liability) => sum + (liability.currentBalance || 0), 0);
     
     // Calculate average monthly income and expenses

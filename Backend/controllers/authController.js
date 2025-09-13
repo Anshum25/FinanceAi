@@ -88,6 +88,27 @@ export const login = async (req, res, next) => {
 // Protect routes - verify JWT token
 export const protect = async (req, res, next) => {
   try {
+    // Development bypass - always use test user in development
+    if (process.env.NODE_ENV === 'development') {
+      // Create a mock user object without database interaction to avoid validation
+      const testUser = {
+        _id: '507f1f77bcf86cd799439011',
+        name: 'Test User',
+        email: 'test@financeai.com',
+        role: 'user',
+        permissions: {
+          assets: true,
+          liabilities: true,
+          transactions: true,
+          investments: true,
+          epf: true,
+          creditScore: true
+        }
+      };
+      req.user = testUser;
+      return next();
+    }
+
     let token;
     if (req.cookies.jwt) {
       token = req.cookies.jwt;

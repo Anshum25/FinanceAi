@@ -177,6 +177,7 @@ export const getLiabilities = async (req, res, next) => {
       }
     });
   } catch (error) {
+    console.error('Error in getLiabilities:', error);
     next(new AppError('Failed to fetch liabilities', 500));
   }
 };

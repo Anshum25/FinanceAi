@@ -10,14 +10,17 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
-// Configure multer for file uploads
+// All routes require authentication
+router.use(protect);
+
+// Configure multer for file uploads - moved after protect middleware
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, path.join(__dirname, '../uploads/documents'));
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, `${req.user.id}-${uniqueSuffix}-${file.originalname}`);
+    cb(null, `${req.user._id}-${uniqueSuffix}-${file.originalname}`);
   }
 });
 
@@ -37,9 +40,6 @@ const upload = multer({
     files: 20 // Max 20 files per request
   }
 });
-
-// All routes require authentication
-router.use(protect);
 
 // Upload documents
 router.post('/upload', upload.array('documents', 20), uploadDocuments);

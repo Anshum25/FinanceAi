@@ -33,9 +33,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions, onOpenImport
   const [showAIInsights, setShowAIInsights] = useState(false);
   const [showGoals, setShowGoals] = useState(false);
 
-  // Calculate KPIs
-  const totalAssets = data.assets?.reduce((sum, asset) => sum + asset.value, 0) || 0;
-  const totalLiabilities = data.liabilities?.reduce((sum, liability) => sum + liability.balance, 0) || 0;
+  // Calculate KPIs - handle both array and non-array data
+  const assetsArray = Array.isArray(data.assets) ? data.assets : [];
+  const liabilitiesArray = Array.isArray(data.liabilities) ? data.liabilities : [];
+  
+  const totalAssets = assetsArray.reduce((sum, asset) => sum + ((asset as any).value || (asset as any).balance || 0), 0);
+  const totalLiabilities = liabilitiesArray.reduce((sum, liability) => sum + ((liability as any).balance || (liability as any).amount || 0), 0);
   const netWorth = totalAssets - totalLiabilities;
   
   const hasPermissions = Object.values(permissions).some(Boolean);

@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'http://localhost:3002/api';
 
 // Mock token for testing - in real app this would come from auth context
 const MOCK_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ODkwMTIzNDU2Nzg5MDEyMyIsImlhdCI6MTczNjc2MzAwMCwiZXhwIjoxNzM5MzU1MDAwfQ.mock_token_for_testing';

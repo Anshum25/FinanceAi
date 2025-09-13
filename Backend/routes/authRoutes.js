@@ -80,6 +80,7 @@ const updatePasswordValidation = [
 router.post('/signup', signupValidation, validateRequest, signup);
 router.post('/login', loginValidation, validateRequest, login);
 router.post('/logout', logout);
+router.get('/me', protect, me);
 
 // Update password
 router.patch('/updateMyPassword', updatePassword);

@@ -173,27 +173,31 @@ export const deleteAccount = async (): Promise<void> => {
 
 // Financial Data API endpoints
 export const getAssets = async (): Promise<any[]> => {
-  return request("/api/data/assets", {
+  const response = await request<{ status: string; data: { assets: any[] } }>("/api/data/assets", {
     method: "GET",
   });
+  return response.data?.assets || [];
 };
 
 export const getLiabilities = async (): Promise<any[]> => {
-  return request("/api/data/liabilities", {
+  const response = await request<{ status: string; data: { liabilities: any[] } }>("/api/data/liabilities", {
     method: "GET",
   });
+  return response.data?.liabilities || [];
 };
 
 export const getTransactions = async (): Promise<any[]> => {
-  return request("/api/data/transactions", {
+  const response = await request<{ status: string; data: { transactions: any[] } }>("/api/data/transactions", {
     method: "GET",
   });
+  return response.data?.transactions || [];
 };
 
 export const getInvestments = async (): Promise<any[]> => {
-  return request("/api/data/investments", {
+  const response = await request<{ status: string; data: { investments: any[] } }>("/api/data/investments", {
     method: "GET",
   });
+  return response.data?.investments || [];
 };
 
 export const getUserPermissions = async (): Promise<any> => {
@@ -205,7 +209,7 @@ export const getUserPermissions = async (): Promise<any> => {
 export const updateUserPermissions = async (permissions: any): Promise<any> => {
   return request("/api/permissions", {
     method: "PUT",
-    body: JSON.stringify(permissions),
+    body: JSON.stringify({ permissions }),
   });
 };
 

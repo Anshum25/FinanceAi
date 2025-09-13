@@ -25,7 +25,7 @@ export const uploadDocuments = async (req, res, next) => {
 
     for (const file of req.files) {
       const document = await Document.create({
-        user: req.user.id,
+        user: req.user._id,
         documentType,
         originalName: file.originalname,
         filename: file.filename,
@@ -54,7 +54,7 @@ export const uploadDocuments = async (req, res, next) => {
         updateObj[`permissions.${permission}`] = true;
       });
       
-      await User.findByIdAndUpdate(req.user.id, updateObj);
+      await User.findByIdAndUpdate(req.user._id, updateObj);
     }
 
     res.status(201).json({
@@ -83,7 +83,7 @@ export const getDocuments = async (req, res, next) => {
   try {
     const { documentType } = req.query;
     
-    const filter = { user: req.user.id };
+    const filter = { user: req.user._id };
     if (documentType) {
       filter.documentType = documentType;
     }
@@ -104,7 +104,7 @@ export const getDocuments = async (req, res, next) => {
 
 export const checkDocumentsForPermissions = async (req, res, next) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     
     // Check which document types the user has uploaded
     const documentCounts = await Document.aggregate([
@@ -154,7 +154,7 @@ export const deleteDocument = async (req, res, next) => {
   try {
     const document = await Document.findOne({
       _id: req.params.id,
-      user: req.user.id
+      user: req.user._id
     });
 
     if (!document) {

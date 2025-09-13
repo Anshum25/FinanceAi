@@ -29,11 +29,6 @@ router.get('/trends', getSpendingTrends);
 router.get('/assets', getAssets);
 router.get('/liabilities', getLiabilities);
 router.get('/investments', getInvestments);
-
-// Detailed section routes
-router.get('/assets', getAssets);
-router.get('/liabilities', getLiabilities);
-router.get('/investments', getInvestments);
 router.get('/epf', getEPFData);
 router.get('/credit-score', getCreditScore);
 
