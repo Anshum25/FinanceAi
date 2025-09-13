@@ -7,12 +7,16 @@ import { fileURLToPath } from 'url';
 // Import routes
 import authRoutes from './routes/authRoutes.js';
 import dataRoutes from './routes/dataRoutes.js';
-import aiRoutes from './routes/aiRoutes.js';
+import documentRoutes from './routes/documentRoutes.js';
 import permissionRoutes from './routes/permissionRoutes.js';
+import apiRoutes from './routes/api.js';
+import seedRoutes from './routes/seedRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
 
 // Import middleware
+import cookieParser from 'cookie-parser';
 import { 
   securityMiddleware, 
   errorHandler, 
@@ -34,6 +38,7 @@ securityMiddleware(app);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Request sanitization
@@ -50,6 +55,9 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/permissions', permissionRoutes);
 app.use('/api/report', reportRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/documents', documentRoutes);
+app.use('/api/seed', seedRoutes);
+app.use('/api', apiRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -87,7 +95,8 @@ app.get('/api', (req, res) => {
         trends: 'GET /api/data/trends'
       },
       upload: {
-        statement: 'POST /api/upload/statement'
+        statement: 'POST /api/upload/statement',
+        document: 'POST /api/upload'
       },
       ai: {
         chat: 'POST /api/ai/chat',
@@ -162,7 +171,7 @@ process.on('SIGINT', () => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 
 const startServer = async () => {
   try {

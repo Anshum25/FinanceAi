@@ -26,6 +26,9 @@ router.get('/summary', getFinancialSummary);
 router.get('/transactions', getTransactions);
 router.get('/categories', getCategoryAnalysis);
 router.get('/trends', getSpendingTrends);
+router.get('/assets', getAssets);
+router.get('/liabilities', getLiabilities);
+router.get('/investments', getInvestments);
 
 // Detailed section routes
 router.get('/assets', getAssets);

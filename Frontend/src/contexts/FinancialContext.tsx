@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { FinancialData, Permissions } from '@/types/financial';
 import { mockFinancialData, defaultPermissions } from '@/data/mockData';
+import * as api from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface FinancialContextType {
   financialData: FinancialData;
@@ -23,7 +25,8 @@ export const useFinancial = () => {
 };
 
 export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [financialData] = useState<FinancialData>(mockFinancialData);
+  const { user } = useAuth();
+  const [financialData, setFinancialData] = useState<FinancialData>(mockFinancialData);
   const [permissions, setPermissions] = useState<Permissions>(defaultPermissions);
   const [isLoading, setIsLoading] = useState(false);
   const [awaitingImport, _setAwaitingImport] = useState<boolean>(() => {
@@ -41,14 +44,84 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } catch {}
   };
 
-  const updatePermissions = (newPermissions: Partial<Permissions>) => {
+  // Fetch financial data from backend
+  const fetchFinancialData = async () => {
+    if (!user) return;
+    
     setIsLoading(true);
-    // Simulate API call delay
-    setTimeout(() => {
-      setPermissions(prev => ({ ...prev, ...newPermissions }));
+    try {
+      // Fetch data from different endpoints
+      const [assetsRes, liabilitiesRes, transactionsRes, investmentsRes] = await Promise.allSettled([
+        api.getAssets(),
+        api.getLiabilities(), 
+        api.getTransactions(),
+        api.getInvestments()
+      ]);
+
+      const newData: Partial<FinancialData> = {};
+      
+      if (assetsRes.status === 'fulfilled') {
+        newData.assets = assetsRes.value;
+      }
+      if (liabilitiesRes.status === 'fulfilled') {
+        newData.liabilities = liabilitiesRes.value;
+      }
+      if (transactionsRes.status === 'fulfilled') {
+        newData.transactions = transactionsRes.value;
+      }
+      if (investmentsRes.status === 'fulfilled') {
+        newData.investments = investmentsRes.value;
+      }
+
+      setFinancialData(prev => ({ ...prev, ...newData }));
+    } catch (error) {
+      console.error('Error fetching financial data:', error);
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
+
+  // Fetch user permissions from backend
+  const fetchPermissions = async () => {
+    if (!user) return;
+    
+    try {
+      const userPermissions = await api.getUserPermissions();
+      setPermissions(userPermissions);
+    } catch (error) {
+      console.error('Error fetching permissions:', error);
+    }
+  };
+
+  const updatePermissions = async (newPermissions: Partial<Permissions>) => {
+    setIsLoading(true);
+    try {
+      // Update local state immediately for better UX
+      setPermissions(prev => ({ ...prev, ...newPermissions }));
+      
+      // Try to update backend, but don't fail if it's not available
+      try {
+        await api.updateUserPermissions(newPermissions);
+      } catch (apiError) {
+        console.warn('Backend not available, permissions saved locally only:', apiError);
+      }
+      
+      // Refetch data based on new permissions
+      await fetchFinancialData();
+    } catch (error) {
+      console.error('Error updating permissions:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch data when user changes or component mounts
+  useEffect(() => {
+    if (user) {
+      fetchPermissions();
+      fetchFinancialData();
+    }
+  }, [user]);
 
   const getFilteredData = (): Partial<FinancialData> => {
     const filtered: Partial<FinancialData> = {};

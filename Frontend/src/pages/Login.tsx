@@ -25,7 +25,7 @@ const Login = () => {
     e.preventDefault();
     try {
       const res = await api.login({ email, password });
-      login({ name: res.data.user.name, email: res.data.user.email });
+      login(res.data.user);
       // If user hasn't imported data yet, mark awaitingImport and ensure modal will show
       try {
         const imported = localStorage.getItem("dataImported") === "true";

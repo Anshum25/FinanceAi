@@ -15,5 +15,6 @@ router.get('/', getPermissions);
 
 // Update user permissions
 router.patch('/', updatePermissions);
+router.put('/', updatePermissions);
 
 export default router;

@@ -61,7 +61,7 @@ const Signup = () => {
         localStorage.setItem("awaitingImport", "true");
         localStorage.removeItem("importDismissed");
       } catch {}
-      login({ name: res.data.user.name, email: res.data.user.email });
+      login(res.data.user);
       toast({ title: "Account created", description: "Welcome to FinanceAI!" });
       navigate("/");
     } catch (err: any) {

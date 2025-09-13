@@ -40,6 +40,23 @@ export const signup = async (req, res, next) => {
   }
 };
 
+export const me = (req, res, next) => {
+  res.status(200).json({
+    status: 'success',
+    data: {
+      user: req.user,
+    },
+  });
+};
+
+export const logout = (req, res) => {
+  res.cookie('jwt', 'loggedout', {
+    expires: new Date(Date.now() + 10 * 1000),
+    httpOnly: true,
+  });
+  res.status(200).json({ status: 'success' });
+};
+
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -71,133 +88,145 @@ export const login = async (req, res, next) => {
 // Protect routes - verify JWT token
 export const protect = async (req, res, next) => {
   try {
-    // For testing purposes, create a mock user if no token provided
-    if (!req.headers.authorization || !req.headers.authorization.startsWith('Bearer')) {
-      // Create or find a test user
-      let testUser = await User.findOne({ email: 'test@example.com' });
-      if (!testUser) {
-        testUser = await User.create({
-          name: 'Test User',
-          email: 'test@example.com',
-          password: 'testpassword123',
-          permissions: {
-            transactions: true,
-            assets: true,
-            liabilities: true,
-            investments: true,
-            epf: true,
-            creditScore: true
-          }
-        });
-      }
-      req.user = testUser;
-      return next();
+    let token;
+    if (req.cookies.jwt) {
+      token = req.cookies.jwt;
     }
 
-    // 1) Getting token and check if it's there
-    const token = req.headers.authorization.split(' ')[1];
-
-    // 2) For mock tokens, create test user
-    if (token.includes('mock_token')) {
-      let testUser = await User.findOne({ email: 'test@example.com' });
-      if (!testUser) {
-        testUser = await User.create({
-          name: 'Test User',
-          email: 'test@example.com',
-          password: 'testpassword123',
-          permissions: {
-            transactions: true,
-            assets: true,
-            liabilities: true,
-            investments: true,
-            epf: true,
-            creditScore: true
-          }
-        });
-      }
-      req.user = testUser;
-      return next();
+    if (!token) {
+      return next(
+        new AppError('You are not logged in! Please log in to get access.', 401)
+      );
     }
 
-    // 3) Verification token for real tokens
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
-    // 4) Check if user still exists
     const currentUser = await User.findById(decoded.id);
     if (!currentUser) {
-      return next(new AppError('The user belonging to this token does no longer exist.', 401));
+      return next(
+        new AppError(
+          'The user belonging to this token does no longer exist.',
+          401
+        )
+      );
     }
 
-    // 5) Check if user changed password after the token was issued
     if (currentUser.changedPasswordAfter(decoded.iat)) {
-      return next(new AppError('User recently changed password! Please log in again.', 401));
+      return next(
+        new AppError('User recently changed password! Please log in again.', 401)
+      );
     }
 
-    // Grant access to protected route
     req.user = currentUser;
     next();
   } catch (err) {
-    return next(new AppError('Invalid token. Please log in again!', 401));
+    next(err);
   }
-};
-
-// Only for rendered pages, no errors!
-export const isLoggedIn = async (req, res, next) => {
-  if (req.cookies.jwt) {
-    try {
-      // 1) Verify token
-      const decoded = await promisify(jwt.verify)(
-        req.cookies.jwt,
-        process.env.JWT_SECRET
-      );
-
-      // 2) Check if user still exists
-      const currentUser = await User.findById(decoded.id);
-      if (!currentUser) {
-        return next();
-      }
-
-      // 3) Check if user changed password after the token was issued
-      if (currentUser.changedPasswordAfter(decoded.iat)) {
-        return next();
-      }
-
-      // THERE IS A LOGGED IN USER
-      res.locals.user = currentUser;
-      return next();
-    } catch (err) {
-      return next();
-    }
-  }
-  next();
-};
-
-export const logout = (req, res) => {
-  res.cookie('jwt', 'loggedout', {
-    expires: new Date(Date.now() + 10 * 1000),
-    httpOnly: true,
-  });
-  res.status(200).json({ status: 'success' });
 };
 
 export const updatePassword = async (req, res, next) => {
   try {
-    // 1) Get user from collection
     const user = await User.findById(req.user.id).select('+password');
-
-    // 2) Check if POSTed current password is correct
+    
     if (!(await user.correctPassword(req.body.passwordCurrent, user.password))) {
       return next(new AppError('Your current password is wrong.', 401));
     }
 
-    // 3) If so, update password
     user.password = req.body.password;
     user.passwordConfirm = req.body.passwordConfirm;
     await user.save();
-    // User.findByIdAndUpdate will NOT work as intended!
 
-    // 4) Log user in, send JWT
     createAndSendToken(user, 200, res);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateProfile = async (req, res, next) => {
+  try {
+    const { name, email, phone } = req.body;
+    
+    // Check if email is already taken by another user
+    if (email && email !== req.user.email) {
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return next(new AppError('Email is already in use', 400));
+      }
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      { name, email, phone },
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        user: updatedUser,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    
+    const user = await User.findById(req.user.id).select('+password');
+    
+    if (!(await user.correctPassword(currentPassword, user.password))) {
+      return next(new AppError('Current password is incorrect', 401));
+    }
+
+    user.password = newPassword;
+    user.passwordConfirm = newPassword;
+    await user.save();
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Password changed successfully',
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const uploadProfilePicture = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return next(new AppError('No file uploaded', 400));
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      { profilePicture: `/uploads/profiles/${req.file.filename}` },
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        user: updatedUser,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deleteAccount = async (req, res, next) => {
+  try {
+    await User.findByIdAndDelete(req.user.id);
+    
+    res.clearCookie('jwt');
+    
+    res.status(204).json({
+      status: 'success',
+      data: null,
+    });
   } catch (err) {
     next(err);
   }

@@ -65,13 +65,14 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({
 
       // Spending Analysis
       if (permissions.transactions && data.transactions) {
-        const spendingInsight = await insightEngine.processNaturalLanguageQuery('Analyze my spending patterns this month');
-        if (spendingInsight) {
+        const spendingInsights = insightEngine.processNaturalLanguageQuery('Analyze my spending patterns this month');
+        if (spendingInsights && spendingInsights.length > 0) {
+          const spendingInsight = spendingInsights[0]; // Get the first insight
           generatedInsights.push({
             id: 'spending',
-            type: spendingInsight.includes('increased') ? 'warning' : 'positive',
+            type: spendingInsight.content && spendingInsight.content.includes('increased') ? 'warning' : 'positive',
             title: 'Spending Pattern Analysis',
-            description: spendingInsight,
+            description: spendingInsight.content || 'Unable to analyze spending patterns at this time.',
             dataUsed: ['Transactions'],
             followUpQuestions: [
               'Show me my biggest expenses',

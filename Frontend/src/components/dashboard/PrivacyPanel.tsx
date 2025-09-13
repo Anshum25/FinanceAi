@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Shield, Eye, EyeOff, Lock, Unlock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useFinancial } from '@/contexts/FinancialContext';
 import { useToast } from '@/hooks/use-toast';
+import { api } from '@/lib/api';
+import MissingDocumentModal from '@/components/modals/MissingDocumentModal';
 
 interface PrivacyPanelProps {
   isOpen: boolean;
@@ -53,9 +55,36 @@ const permissionCategories = [
 const PrivacyPanel: React.FC<PrivacyPanelProps> = ({ isOpen, onClose }) => {
   const { permissions, updatePermissions, isLoading } = useFinancial();
   const { toast } = useToast();
+  const [hasDocuments, setHasDocuments] = useState<Record<string, boolean>>({});
+  const [missingDocumentModal, setMissingDocumentModal] = useState<{
+    open: boolean;
+    permissionType: string;
+  }>({ open: false, permissionType: '' });
 
-  const handleToggle = (category: keyof typeof permissions) => {
+  useEffect(() => {
+    if (isOpen) {
+      checkDocuments();
+    }
+  }, [isOpen]);
+
+  const checkDocuments = async () => {
+    try {
+      const response = await api.checkDocumentsForPermissions();
+      setHasDocuments(response.data.hasDocuments);
+    } catch (error) {
+      console.error('Failed to check documents:', error);
+    }
+  };
+
+  const handleToggle = async (category: keyof typeof permissions) => {
     const newValue = !permissions[category];
+    
+    // If enabling a permission, check if documents exist
+    if (newValue && !hasDocuments[category]) {
+      setMissingDocumentModal({ open: true, permissionType: category });
+      return;
+    }
+    
     updatePermissions({ [category]: newValue });
     
     toast({
@@ -65,24 +94,44 @@ const PrivacyPanel: React.FC<PrivacyPanelProps> = ({ isOpen, onClose }) => {
     });
   };
 
-  const enableAllPermissions = () => {
-    const allEnabled = Object.keys(permissions).reduce(
-      (acc, key) => ({ ...acc, [key]: true }),
+  const handleDocumentUploaded = () => {
+    // Refresh document status and enable the permission
+    checkDocuments();
+    const category = missingDocumentModal.permissionType as keyof typeof permissions;
+    updatePermissions({ [category]: true });
+    
+    toast({
+      title: 'Access Granted',
+      description: `${permissionCategories.find(c => c.key === category)?.label} data access enabled.`,
+    });
+  };
+
+  const enableAllPermissions = async () => {
+    // Enable all permission categories
+    const allEnabled = permissionCategories.reduce(
+      (acc, category) => ({ ...acc, [category.key]: true }),
       {}
     );
-    updatePermissions(allEnabled);
+    
+    console.log('Enabling all permissions:', allEnabled);
+    await updatePermissions(allEnabled);
+    
     toast({
       title: 'All Access Granted',
       description: 'Full access to all financial data enabled.',
     });
   };
 
-  const disableAllPermissions = () => {
-    const allDisabled = Object.keys(permissions).reduce(
-      (acc, key) => ({ ...acc, [key]: false }),
+  const disableAllPermissions = async () => {
+    // Disable all permission categories
+    const allDisabled = permissionCategories.reduce(
+      (acc, category) => ({ ...acc, [category.key]: false }),
       {}
     );
-    updatePermissions(allDisabled);
+    
+    console.log('Disabling all permissions:', allDisabled);
+    await updatePermissions(allDisabled);
+    
     toast({
       title: 'All Access Revoked',
       description: 'Access to all financial data disabled.',
@@ -90,7 +139,7 @@ const PrivacyPanel: React.FC<PrivacyPanelProps> = ({ isOpen, onClose }) => {
     });
   };
 
-  const enabledCount = Object.values(permissions).filter(Boolean).length;
+  const enabledCount = permissionCategories.filter(category => permissions[category.key]).length;
   const totalCount = permissionCategories.length;
 
   return (
@@ -231,6 +280,14 @@ const PrivacyPanel: React.FC<PrivacyPanelProps> = ({ isOpen, onClose }) => {
               )}
             </div>
           </motion.div>
+
+          {/* Missing Document Modal */}
+          <MissingDocumentModal
+            open={missingDocumentModal.open}
+            onOpenChange={(open) => setMissingDocumentModal({ ...missingDocumentModal, open })}
+            permissionType={missingDocumentModal.permissionType}
+            onDocumentUploaded={handleDocumentUploaded}
+          />
         </>
       )}
     </AnimatePresence>

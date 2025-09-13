@@ -3,32 +3,107 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UploadCloud } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { UploadCloud, FileText, Trash2 } from "lucide-react";
 import { useFinancial } from "@/contexts/FinancialContext";
 import { useToast } from "@/components/ui/use-toast";
+import { api } from "@/lib/api";
 
 interface ImportDataModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
+type DocumentType = 'assetStatement' | 'epfPassbook' | 'mutualFundCAS' | 'creditReport';
+
+interface DocumentFiles {
+  [key: string]: File[];
+}
+
 const ImportDataModal: React.FC<ImportDataModalProps> = ({ open, onOpenChange }) => {
   const { setAwaitingImport } = useFinancial();
   const { toast } = useToast();
-  const [file, setFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  
+  // All document types are always enabled (no toggles)
+  const enabledDocuments = {
+    assetStatement: true,
+    epfPassbook: true,
+    mutualFundCAS: true,
+    creditReport: true,
+  };
+  
+  // Files for each document type
+  const [documentFiles, setDocumentFiles] = useState<DocumentFiles>({
+    assetStatement: [],
+    epfPassbook: [],
+    mutualFundCAS: [],
+    creditReport: [],
+  });
+
+  const documentTypes = [
+    { key: 'assetStatement', label: 'Asset Statement', description: 'Bank statements, investment accounts' },
+    { key: 'epfPassbook', label: 'EPF Passbook', description: 'Employee Provident Fund statements' },
+    { key: 'mutualFundCAS', label: 'Mutual Fund CAS', description: 'Consolidated Account Statement' },
+    { key: 'creditReport', label: 'Credit Report', description: 'CIBIL or credit bureau reports' },
+  ];
+
+  // Remove toggleDocument function as we no longer have toggles
+
+  const addFiles = (docType: DocumentType, files: FileList | null) => {
+    if (!files) return;
+    
+    const newFiles = Array.from(files).filter(file => file.type === 'application/pdf');
+    if (newFiles.length !== files.length) {
+      toast({ title: "Invalid files", description: "Only PDF files are allowed.", variant: "destructive" });
+    }
+    
+    setDocumentFiles(prev => ({
+      ...prev,
+      [docType]: [...prev[docType], ...newFiles]
+    }));
+  };
+
+  const removeFile = (docType: DocumentType, index: number) => {
+    setDocumentFiles(prev => ({
+      ...prev,
+      [docType]: prev[docType].filter((_, i) => i !== index)
+    }));
+  };
+
+  const hasAnyFiles = () => {
+    return Object.values(documentFiles).some(files => files.length > 0);
+  };
 
   const onImport = async () => {
     setIsImporting(true);
     try {
-      // TODO: parse Excel/CSV here and populate data by calling backend or updating context
-      await new Promise((r) => setTimeout(r, 1200));
+      // Upload documents for each enabled type
+      const uploadPromises = [];
+      
+      for (const [docType, files] of Object.entries(documentFiles)) {
+        if (files.length > 0 && enabledDocuments[docType as DocumentType]) {
+          uploadPromises.push(api.uploadDocuments(docType, files));
+        }
+      }
+      
+      if (uploadPromises.length === 0) {
+        throw new Error("No files to upload");
+      }
+      
+      await Promise.all(uploadPromises);
+      
       setAwaitingImport(false);
       try { localStorage.setItem("dataImported", "true"); localStorage.removeItem("importDismissed"); } catch {}
       onOpenChange(false);
-      toast({ title: "Import complete", description: "Your dashboard will refresh with insights." });
-    } catch (e) {
+      toast({ title: "Import complete", description: "Your documents have been uploaded and are being processed." });
+    } catch (e: any) {
       setAwaitingImport(true);
+      toast({ 
+        title: "Import failed", 
+        description: e.message || "Please try again.", 
+        variant: "destructive" 
+      });
     } finally {
       setIsImporting(false);
     }
@@ -40,20 +115,59 @@ const ImportDataModal: React.FC<ImportDataModalProps> = ({ open, onOpenChange })
         <DialogHeader>
           <DialogTitle className="bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">Import your financial data</DialogTitle>
           <DialogDescription>
-            Upload an Excel (.xlsx), CSV, or PDF statement. We'll use this to initialize your dashboard. You can also skip and do it later.
+            Upload your financial documents as PDF files. You can upload multiple files per document type.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="border-2 border-dashed rounded-xl p-6 text-center bg-accent/10">
-            <UploadCloud className="w-8 h-8 text-primary mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground mb-3">Drag and drop your file here, or choose a file</p>
-            <div className="flex items-center justify-center gap-3">
-              <Label htmlFor="file" className="sr-only">File</Label>
-              <Input id="file" type="file" accept=".xlsx,.csv,.pdf" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="max-w-xs" />
+        <div className="space-y-6 max-h-96 overflow-y-auto">
+          {documentTypes.map((docType) => (
+            <div key={docType.key} className="space-y-3">
+              {/* Document type header - no toggle */}
+              <div className="space-y-1">
+                <Label className="text-sm font-medium">{docType.label}</Label>
+                <p className="text-xs text-muted-foreground">{docType.description}</p>
+              </div>
+
+              {/* Upload area - always visible */}
+              <div className="space-y-2">
+                <div className="border-2 border-dashed rounded-lg p-4 bg-accent/5">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <UploadCloud className="w-4 h-4 text-primary" />
+                    <span className="text-sm text-muted-foreground">Upload PDF files</span>
+                  </div>
+                  <Input
+                    type="file"
+                    accept=".pdf"
+                    multiple
+                    onChange={(e) => addFiles(docType.key as DocumentType, e.target.files)}
+                    className="text-xs"
+                  />
+                </div>
+
+                {/* Show uploaded files */}
+                {documentFiles[docType.key]?.length > 0 && (
+                  <div className="space-y-1">
+                    {documentFiles[docType.key].map((file, index) => (
+                      <div key={index} className="flex items-center justify-between bg-accent/10 rounded p-2">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-3 h-3 text-primary" />
+                          <span className="text-xs truncate max-w-[200px]">{file.name}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFile(docType.key as DocumentType, index)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-            {file && <p className="text-xs text-muted-foreground mt-2">Selected: {file.name}</p>}
-          </div>
+          ))}
         </div>
 
         <DialogFooter className="gap-2">
@@ -68,8 +182,8 @@ const ImportDataModal: React.FC<ImportDataModalProps> = ({ open, onOpenChange })
           >
             Skip for now
           </Button>
-          <Button variant="gradient" onClick={onImport} disabled={!file || isImporting}>
-            {isImporting ? "Importing..." : "Import Data"}
+          <Button variant="gradient" onClick={onImport} disabled={!hasAnyFiles() || isImporting}>
+            {isImporting ? "Processing..." : "Import Documents"}
           </Button>
         </DialogFooter>
       </DialogContent>
