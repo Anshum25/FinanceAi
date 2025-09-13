@@ -86,19 +86,19 @@ const getFinancialContext = async (userId) => {
 const generateSampleData = async (userId) => {
   console.log('🔄 Generating sample data for user:', userId);
   
-  // Create sample transactions
+  // Create sample transactions with realistic INR amounts
   const sampleTransactions = [
-    { userId: userId, amount: 5000, type: 'income', category: 'salary', description: 'Monthly salary', date: new Date('2025-01-01') },
-    { userId: userId, amount: 150, type: 'expense', category: 'groceries', description: 'Grocery shopping', date: new Date('2025-01-10') },
-    { userId: userId, amount: 50, type: 'expense', category: 'transportation', description: 'Uber ride', date: new Date('2025-01-09') },
-    { userId: userId, amount: 80, type: 'expense', category: 'utilities', description: 'Electricity bill', date: new Date('2025-01-08') },
-    { userId: userId, amount: 200, type: 'expense', category: 'entertainment', description: 'Movie and dinner', date: new Date('2025-01-07') }
+    { userId: userId, amount: 75000, type: 'income', category: 'salary', description: 'Monthly salary', date: new Date('2025-01-01') },
+    { userId: userId, amount: 2500, type: 'expense', category: 'groceries', description: 'Grocery shopping', date: new Date('2025-01-10') },
+    { userId: userId, amount: 800, type: 'expense', category: 'transportation', description: 'Uber ride', date: new Date('2025-01-09') },
+    { userId: userId, amount: 3200, type: 'expense', category: 'utilities', description: 'Electricity bill', date: new Date('2025-01-08') },
+    { userId: userId, amount: 4500, type: 'expense', category: 'entertainment', description: 'Movie and dinner', date: new Date('2025-01-07') }
   ];
   
   const sampleAssets = [
-    { userId: userId, type: 'savings_account', name: 'Savings Account', balance: 25000 },
-    { userId: userId, type: 'current_account', name: 'Checking Account', balance: 5000 },
-    { userId: userId, type: 'cash', name: 'Cash in Hand', balance: 2000 }
+    { userId: userId, type: 'savings_account', name: 'Savings Account', balance: 500000 },
+    { userId: userId, type: 'current_account', name: 'Checking Account', balance: 125000 },
+    { userId: userId, type: 'cash', name: 'Cash in Hand', balance: 15000 }
   ];
   
   const sampleLiabilities = [
@@ -345,28 +345,29 @@ const generateFallbackResponse = (message, userData) => {
   
   // Generate contextual responses based on the question
   if (lowerMessage.includes('spend') || lowerMessage.includes('expense')) {
-    return `Based on your recent transactions, you've spent $${monthlyExpenses.toFixed(2)} this month. Your largest expense categories appear to be ${userData.transactions
+    return `Your monthly expenses are ₹${monthlyExpenses.toFixed(2)}. Your top spending categories are ${userData.transactions
       .filter(tx => tx.type === 'expense')
+      .sort((a, b) => b.amount - a.amount)
       .map(tx => tx.category)
       .slice(0, 3)
       .join(', ')}.`;
   }
   
   if (lowerMessage.includes('income') || lowerMessage.includes('earn')) {
-    return `Your monthly income is $${monthlyIncome.toFixed(2)}. After expenses of $${monthlyExpenses.toFixed(2)}, you have a net cash flow of $${(monthlyIncome - monthlyExpenses).toFixed(2)}.`;
+    return `Your monthly income is ₹${monthlyIncome.toFixed(2)}. After expenses of ₹${monthlyExpenses.toFixed(2)}, you have a net cash flow of ₹${(monthlyIncome - monthlyExpenses).toFixed(2)}.`;
   }
   
   if (lowerMessage.includes('net worth') || lowerMessage.includes('worth')) {
-    return `Your current net worth is $${netWorth.toFixed(2)}. This includes $${totalAssets.toFixed(2)} in assets and $${totalLiabilities.toFixed(2)} in liabilities.`;
+    return `Your current net worth is ₹${netWorth.toFixed(2)}. This includes ₹${totalAssets.toFixed(2)} in assets and ₹${totalLiabilities.toFixed(2)} in liabilities.`;
   }
   
   if (lowerMessage.includes('save') || lowerMessage.includes('saving')) {
     const savingsRate = monthlyIncome > 0 ? ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100 : 0;
-    return `You're currently saving $${(monthlyIncome - monthlyExpenses).toFixed(2)} per month, which is a ${savingsRate.toFixed(1)}% savings rate. ${savingsRate >= 20 ? 'Great job!' : 'Consider increasing your savings rate for better financial security.'}`;
+    return `You're currently saving ₹${(monthlyIncome - monthlyExpenses).toFixed(2)} per month, which is a ${savingsRate.toFixed(1)}% savings rate. ${savingsRate >= 20 ? 'Great job!' : 'Consider increasing your savings rate for better financial security.'}`;
   }
   
   if (lowerMessage.includes('debt') || lowerMessage.includes('owe')) {
-    return `You currently have $${totalLiabilities.toFixed(2)} in total debt. ${totalLiabilities > 0 ? 'Consider focusing on paying down high-interest debt first.' : 'Great job staying debt-free!'}`;
+    return `You currently have ₹${totalLiabilities.toFixed(2)} in total debt. ${totalLiabilities > 0 ? 'Consider focusing on paying down high-interest debt first.' : 'Great job staying debt-free!'}`;
   }
   
   if (lowerMessage.includes('vacation') || lowerMessage.includes('afford') || lowerMessage.includes('trip')) {
@@ -375,18 +376,18 @@ const generateFallbackResponse = (message, userData) => {
     const emergencyFund = monthlyExpenses * 3; // 3 months emergency fund
     const safeVacationBudget = Math.max(0, availableCash - emergencyFund);
     
-    if (safeVacationBudget > 1000) {
-      return `Based on your finances, you could afford a vacation! You have $${safeVacationBudget.toFixed(2)} available after maintaining a 3-month emergency fund. Consider budgeting $${Math.min(safeVacationBudget * 0.5, monthlySavings * 2).toFixed(2)} for a vacation to stay financially secure.`;
+    if (safeVacationBudget > 50000) {
+      return `Based on your finances, you could afford a vacation! You have ₹${safeVacationBudget.toFixed(2)} available after maintaining a 3-month emergency fund. Consider budgeting ₹${Math.min(safeVacationBudget * 0.5, monthlySavings * 2).toFixed(2)} for a vacation to stay financially secure.`;
     } else if (monthlySavings > 0) {
-      const monthsToSave = Math.ceil(2000 / monthlySavings);
-      return `You're saving $${monthlySavings.toFixed(2)} per month. To afford a nice vacation, consider saving for ${monthsToSave} months to build up a vacation fund of $${(monthsToSave * monthlySavings).toFixed(2)}.`;
+      const monthsToSave = Math.ceil(100000 / monthlySavings);
+      return `You're saving ₹${monthlySavings.toFixed(2)} per month. To afford a nice vacation, consider saving for ${monthsToSave} months to build up a vacation fund of ₹${(monthsToSave * monthlySavings).toFixed(2)}.`;
     } else {
       return `Based on your current finances, I'd recommend focusing on increasing your savings rate before planning a vacation. Try to reduce expenses or increase income to create a vacation fund.`;
     }
   }
   
   // Default response
-  return `I can help you analyze your finances! You have $${totalAssets.toFixed(2)} in assets, $${totalLiabilities.toFixed(2)} in liabilities, for a net worth of $${netWorth.toFixed(2)}. Your monthly income is $${monthlyIncome.toFixed(2)} and expenses are $${monthlyExpenses.toFixed(2)}. What would you like to know more about?`;
+  return `I can help you analyze your finances! You have ₹${totalAssets.toFixed(2)} in assets, ₹${totalLiabilities.toFixed(2)} in liabilities, for a net worth of ₹${netWorth.toFixed(2)}. Your monthly income is ₹${monthlyIncome.toFixed(2)} and expenses are ₹${monthlyExpenses.toFixed(2)}. What would you like to know more about?`;
 };
 
 // Get financial insights

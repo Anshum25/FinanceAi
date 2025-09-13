@@ -7,7 +7,7 @@ export const mockFinancialData: FinancialData = {
       name: 'Savings Account',
       type: 'bank',
       value: 25000,
-      currency: 'MYR',
+      currency: 'INR',
       lastUpdated: '2024-01-15T10:30:00Z'
     },
     {
@@ -15,7 +15,7 @@ export const mockFinancialData: FinancialData = {
       name: 'Current Account',
       type: 'bank',
       value: 8500,
-      currency: 'MYR',
+      currency: 'INR',
       lastUpdated: '2024-01-15T10:30:00Z'
     },
     {
@@ -23,7 +23,7 @@ export const mockFinancialData: FinancialData = {
       name: 'Cash on Hand',
       type: 'cash',
       value: 1200,
-      currency: 'MYR',
+      currency: 'INR',
       lastUpdated: '2024-01-14T18:00:00Z'
     },
     {
@@ -31,7 +31,7 @@ export const mockFinancialData: FinancialData = {
       name: 'Primary Residence',
       type: 'property',
       value: 450000,
-      currency: 'MYR',
+      currency: 'INR',
       lastUpdated: '2024-01-01T00:00:00Z'
     }
   ],
@@ -44,7 +44,7 @@ export const mockFinancialData: FinancialData = {
       balance: 280000,
       interestRate: 4.2,
       minimumPayment: 1800,
-      currency: 'MYR',
+      currency: 'INR',
       lastUpdated: '2024-01-15T10:30:00Z'
     },
     {
@@ -54,7 +54,7 @@ export const mockFinancialData: FinancialData = {
       balance: 4500,
       interestRate: 18.0,
       minimumPayment: 150,
-      currency: 'MYR',
+      currency: 'INR',
       lastUpdated: '2024-01-15T10:30:00Z'
     },
     {
@@ -64,7 +64,7 @@ export const mockFinancialData: FinancialData = {
       balance: 15000,
       interestRate: 6.5,
       minimumPayment: 450,
-      currency: 'MYR',
+      currency: 'INR',
       lastUpdated: '2024-01-15T10:30:00Z'
     }
   ],
@@ -79,7 +79,7 @@ export const mockFinancialData: FinancialData = {
       category: 'Salary',
       type: 'income',
       account: 'Current Account',
-      currency: 'MYR'
+      currency: 'INR'
     },
     {
       id: '2',
@@ -89,7 +89,7 @@ export const mockFinancialData: FinancialData = {
       category: 'Freelance',
       type: 'income',
       account: 'Current Account',
-      currency: 'MYR'
+      currency: 'INR'
     },
     
     // Expense transactions
@@ -101,7 +101,7 @@ export const mockFinancialData: FinancialData = {
       category: 'Food & Groceries',
       type: 'expense',
       account: 'Credit Card',
-      currency: 'MYR'
+      currency: 'INR'
     },
     {
       id: '4',
@@ -111,7 +111,7 @@ export const mockFinancialData: FinancialData = {
       category: 'Housing',
       type: 'expense',
       account: 'Current Account',
-      currency: 'MYR'
+      currency: 'INR'
     },
     {
       id: '5',
@@ -121,7 +121,7 @@ export const mockFinancialData: FinancialData = {
       category: 'Transportation',
       type: 'expense',
       account: 'Current Account',
-      currency: 'MYR'
+      currency: 'INR'
     },
     {
       id: '6',
@@ -131,7 +131,7 @@ export const mockFinancialData: FinancialData = {
       category: 'Transportation',
       type: 'expense',
       account: 'Credit Card',
-      currency: 'MYR'
+      currency: 'INR'
     },
     {
       id: '7',
@@ -141,7 +141,7 @@ export const mockFinancialData: FinancialData = {
       category: 'Dining Out',
       type: 'expense',
       account: 'Credit Card',
-      currency: 'MYR'
+      currency: 'INR'
     },
     {
       id: '8',
@@ -151,7 +151,7 @@ export const mockFinancialData: FinancialData = {
       category: 'Utilities',
       type: 'expense',
       account: 'Current Account',
-      currency: 'MYR'
+      currency: 'INR'
     },
     {
       id: '9',
@@ -161,7 +161,7 @@ export const mockFinancialData: FinancialData = {
       category: 'Shopping',
       type: 'expense',
       account: 'Credit Card',
-      currency: 'MYR'
+      currency: 'INR'
     },
     {
       id: '10',
@@ -171,7 +171,7 @@ export const mockFinancialData: FinancialData = {
       category: 'Dining Out',
       type: 'expense',
       account: 'Credit Card',
-      currency: 'MYR'
+      currency: 'INR'
     },
     
     // Previous month transactions (December)
@@ -183,7 +183,7 @@ export const mockFinancialData: FinancialData = {
       category: 'Bonus',
       type: 'income',
       account: 'Savings Account',
-      currency: 'MYR'
+      currency: 'INR'
     },
     {
       id: '12',
@@ -193,7 +193,7 @@ export const mockFinancialData: FinancialData = {
       category: 'Shopping',
       type: 'expense',
       account: 'Credit Card',
-      currency: 'MYR'
+      currency: 'INR'
     },
     {
       id: '13',
@@ -203,7 +203,7 @@ export const mockFinancialData: FinancialData = {
       category: 'Dining Out',
       type: 'expense',
       account: 'Credit Card',
-      currency: 'MYR'
+      currency: 'INR'
     }
   ],
   
@@ -238,7 +238,7 @@ export const mockFinancialData: FinancialData = {
       purchasePrice: 2.20,
       gainLoss: 250,
       gainLossPercentage: 11.36,
-      currency: 'MYR',
+      currency: 'INR',
       lastUpdated: '2024-01-15T16:00:00Z'
     },
     {
@@ -251,7 +251,7 @@ export const mockFinancialData: FinancialData = {
       purchasePrice: 4.10,
       gainLoss: -150,
       gainLossPercentage: -7.32,
-      currency: 'MYR',
+      currency: 'INR',
       lastUpdated: '2024-01-15T16:00:00Z'
     },
     {
@@ -264,7 +264,7 @@ export const mockFinancialData: FinancialData = {
       purchasePrice: 15.80,
       gainLoss: 140,
       gainLossPercentage: 4.43,
-      currency: 'MYR',
+      currency: 'INR',
       lastUpdated: '2024-01-15T16:00:00Z'
     }
   ]

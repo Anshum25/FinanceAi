@@ -208,7 +208,7 @@ const GoalsModal: React.FC<GoalsModalProps> = ({ isOpen, onClose }) => {
                       </select>
                     </div>
                     <div>
-                      <Label htmlFor="targetAmount">Target Amount (MYR)</Label>
+                      <Label htmlFor="targetAmount">Target Amount (₹)</Label>
                       <Input
                         id="targetAmount"
                         type="number"
@@ -218,7 +218,7 @@ const GoalsModal: React.FC<GoalsModalProps> = ({ isOpen, onClose }) => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="currentAmount">Current Amount (MYR)</Label>
+                      <Label htmlFor="currentAmount">Current Amount (₹)</Label>
                       <Input
                         id="currentAmount"
                         type="number"
@@ -326,7 +326,7 @@ const GoalsModal: React.FC<GoalsModalProps> = ({ isOpen, onClose }) => {
                               <div className="flex justify-between text-sm mb-2">
                                 <span>Progress</span>
                                 <span className="font-medium">
-                                  MYR {goal.currentAmount.toLocaleString()} / MYR {goal.targetAmount.toLocaleString()}
+                                  ₹{goal.currentAmount.toLocaleString()} / ₹{goal.targetAmount.toLocaleString()}
                                 </span>
                               </div>
                               <Progress value={progress} className="h-2" />

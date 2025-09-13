@@ -59,7 +59,7 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
       return (
         <div className="financial-card p-3 shadow-lg">
           <p className="font-semibold text-foreground">{data.name}</p>
-          <p className="text-primary">MYR {data.value.toFixed(2)}</p>
+          <p className="text-primary">₹{data.value.toFixed(2)}</p>
           <p className="text-muted-foreground text-sm">{data.percentage.toFixed(1)}%</p>
         </div>
       );

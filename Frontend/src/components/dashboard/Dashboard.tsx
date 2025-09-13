@@ -183,7 +183,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions, onOpenImport
           {permissions.assets && permissions.liabilities && (
             <KPICard
               title="Net Worth"
-              value={awaitingImport ? '---' : `MYR ${netWorth.toLocaleString()}`}
+              value={awaitingImport ? '---' : `₹${netWorth.toLocaleString()}`}
               change={awaitingImport ? undefined : (netWorth > 0 ? '+5.2% this month' : undefined)}
               changeType={awaitingImport ? 'neutral' : (netWorth > 0 ? 'positive' : 'negative')}
               icon={netWorth > 0 ? TrendingUp : TrendingDown}
@@ -194,7 +194,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions, onOpenImport
           {permissions.transactions && (
             <KPICard
               title="Monthly Spending"
-              value={awaitingImport ? '---' : `MYR ${monthlySpending.toLocaleString()}`}
+              value={awaitingImport ? '---' : `₹${monthlySpending.toLocaleString()}`}
               change={awaitingImport ? undefined : "-8.3% vs last month"}
               changeType={awaitingImport ? 'neutral' : 'positive'}
               icon={CreditCard}
@@ -205,7 +205,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions, onOpenImport
           {permissions.investments && data.investments && data.investments.length > 0 && (
             <KPICard
               title="Investments"
-              value={awaitingImport ? '---' : `MYR ${totalInvestmentValue.toLocaleString()}`}
+              value={awaitingImport ? '---' : `₹${totalInvestmentValue.toLocaleString()}`}
               change={awaitingImport ? undefined : `${totalInvestmentGains >= 0 ? '+' : ''}${((totalInvestmentGains / (totalInvestmentValue - totalInvestmentGains)) * 100).toFixed(1)}%`}
               changeType={awaitingImport ? 'neutral' : (totalInvestmentGains >= 0 ? 'positive' : 'negative')}
               icon={TrendingUp}

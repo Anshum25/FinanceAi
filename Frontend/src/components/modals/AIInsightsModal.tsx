@@ -93,7 +93,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({
           id: 'networth',
           type: netWorth > 0 ? 'positive' : 'warning',
           title: 'Net Worth Health',
-          description: `Your current net worth is MYR ${netWorth.toLocaleString()}. ${netWorth > 0 ? 'Great job maintaining a positive net worth!' : 'Consider focusing on debt reduction or asset building.'}`,
+          description: `Your current net worth is ₹${netWorth.toLocaleString()}. ${netWorth > 0 ? 'Great job maintaining a positive net worth!' : 'Consider focusing on debt reduction or asset building.'}`,
           dataUsed: ['Assets', 'Liabilities'],
           actionable: netWorth < 0 ? 'Focus on paying down high-interest debt first' : 'Consider increasing your investment allocation',
           followUpQuestions: [
@@ -113,7 +113,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({
           id: 'investments',
           type: totalGains >= 0 ? 'positive' : 'negative',
           title: 'Investment Performance',
-          description: `Your investment portfolio shows ${totalGains >= 0 ? 'gains' : 'losses'} of MYR ${Math.abs(totalGains).toFixed(2)} with an average return of ${avgGainPercentage.toFixed(1)}%.`,
+          description: `Your investment portfolio shows ${totalGains >= 0 ? 'gains' : 'losses'} of ₹${Math.abs(totalGains).toFixed(2)} with an average return of ${avgGainPercentage.toFixed(1)}%.`,
           dataUsed: ['Investments'],
           actionable: avgGainPercentage < 5 ? 'Consider diversifying your portfolio for better returns' : 'Your portfolio is performing well',
           followUpQuestions: [
@@ -151,7 +151,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({
           id: 'debt',
           type: highInterestDebt.length > 0 ? 'warning' : 'neutral',
           title: 'Debt Management',
-          description: `You have MYR ${totalDebt.toLocaleString()} in total debt. ${highInterestDebt.length > 0 ? `${highInterestDebt.length} debt(s) have high interest rates that should be prioritized.` : 'Your debt interest rates are manageable.'}`,
+          description: `You have ₹${totalDebt.toLocaleString()} in total debt. ${highInterestDebt.length > 0 ? `${highInterestDebt.length} debt(s) have high interest rates that should be prioritized.` : 'Your debt interest rates are manageable.'}`,
           dataUsed: ['Liabilities'],
           actionable: highInterestDebt.length > 0 ? 'Consider the debt avalanche method - pay minimums on all debts, then put extra money toward the highest interest rate debt' : 'Continue making regular payments',
           followUpQuestions: [

@@ -79,7 +79,7 @@ const ExpenseBreakdownChart: React.FC<ExpenseBreakdownChartProps> = ({ transacti
   const totalExpenses = categoryData.reduce((sum, cat) => sum + cat.amount, 0);
 
   const formatTooltip = (value: number, name: string) => [
-    `MYR ${value.toFixed(2)}`,
+    `₹ ${value.toFixed(2)}`,
     name
   ];
 
@@ -90,7 +90,7 @@ const ExpenseBreakdownChart: React.FC<ExpenseBreakdownChartProps> = ({ transacti
       return (
         <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
           <p className="font-semibold text-foreground">{data.category}</p>
-          <p className="text-primary">MYR {data.amount.toFixed(2)}</p>
+          <p className="text-primary">₹ {data.amount.toFixed(2)}</p>
           <p className="text-sm text-muted-foreground">{percentage}% of total</p>
           <p className="text-xs text-muted-foreground">{data.count} transactions</p>
         </div>
@@ -235,7 +235,7 @@ const ExpenseBreakdownChart: React.FC<ExpenseBreakdownChartProps> = ({ transacti
                         {category.category}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        MYR {category.amount.toFixed(0)}
+                        ₹ {category.amount.toFixed(0)}
                       </p>
                     </div>
                     <Eye className="w-3 h-3 text-muted-foreground" />
@@ -266,7 +266,7 @@ const ExpenseBreakdownChart: React.FC<ExpenseBreakdownChartProps> = ({ transacti
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center p-3 bg-muted/30 rounded-lg">
                   <p className="text-2xl font-bold text-foreground">
-                    MYR {selectedCategory.amount.toFixed(2)}
+                    ₹ {selectedCategory.amount.toFixed(2)}
                   </p>
                   <p className="text-sm text-muted-foreground">Total Spent</p>
                 </div>
@@ -304,7 +304,7 @@ const ExpenseBreakdownChart: React.FC<ExpenseBreakdownChartProps> = ({ transacti
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-sm">
-                          MYR {Math.abs(transaction.amount).toFixed(2)}
+                          ₹ {Math.abs(transaction.amount).toFixed(2)}
                         </p>
                         <Badge variant="secondary" className="text-xs">
                           {transaction.category}

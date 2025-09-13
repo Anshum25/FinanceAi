@@ -49,11 +49,11 @@ export class PDFReportGenerator {
       yPosition += 10;
 
       pdf.setFontSize(12);
-      pdf.text(`Net Worth: MYR ${netWorth.toLocaleString()}`, margin, yPosition);
+      pdf.text(`Net Worth: ₹ ${netWorth.toLocaleString()}`, margin, yPosition);
       yPosition += 5;
-      pdf.text(`Total Assets: MYR ${totalAssets.toLocaleString()}`, margin, yPosition);
+      pdf.text(`Total Assets: ₹ ${totalAssets.toLocaleString()}`, margin, yPosition);
       yPosition += 5;
-      pdf.text(`Total Liabilities: MYR ${totalLiabilities.toLocaleString()}`, margin, yPosition);
+      pdf.text(`Total Liabilities: ₹ ${totalLiabilities.toLocaleString()}`, margin, yPosition);
       yPosition += 15;
     }
 
@@ -93,11 +93,11 @@ export class PDFReportGenerator {
         .reduce((sum, t) => sum + t.amount, 0));
 
       pdf.setFontSize(12);
-      pdf.text(`Total Income: MYR ${income.toLocaleString()}`, margin, yPosition);
+      pdf.text(`Total Income: ₹ ${income.toLocaleString()}`, margin, yPosition);
       yPosition += 5;
-      pdf.text(`Total Expenses: MYR ${expenses.toLocaleString()}`, margin, yPosition);
+      pdf.text(`Total Expenses: ₹ ${expenses.toLocaleString()}`, margin, yPosition);
       yPosition += 5;
-      pdf.text(`Net Savings: MYR ${(income - expenses).toLocaleString()}`, margin, yPosition);
+      pdf.text(`Net Savings: ₹ ${(income - expenses).toLocaleString()}`, margin, yPosition);
       yPosition += 15;
 
       // Top Expense Categories
@@ -117,7 +117,7 @@ export class PDFReportGenerator {
         pdf.text('Top Expense Categories:', margin, yPosition);
         yPosition += 5;
         topCategories.forEach(([category, amount]) => {
-          pdf.text(`• ${category}: MYR ${amount.toFixed(2)}`, margin + 5, yPosition);
+          pdf.text(`• ${category}: ₹ ${amount.toFixed(2)}`, margin + 5, yPosition);
           yPosition += 5;
         });
         yPosition += 10;
@@ -135,15 +135,15 @@ export class PDFReportGenerator {
       const totalGains = this.data.investments.reduce((sum, inv) => sum + inv.gainLoss, 0);
       
       pdf.setFontSize(12);
-      pdf.text(`Portfolio Value: MYR ${totalValue.toLocaleString()}`, margin, yPosition);
+      pdf.text(`Portfolio Value: ₹ ${totalValue.toLocaleString()}`, margin, yPosition);
       yPosition += 5;
-      pdf.text(`Total Gains/Losses: MYR ${totalGains.toFixed(2)}`, margin, yPosition);
+      pdf.text(`Total Gains/Losses: ₹ ${totalGains.toFixed(2)}`, margin, yPosition);
       yPosition += 10;
 
       pdf.text('Holdings:', margin, yPosition);
       yPosition += 5;
       this.data.investments.forEach(inv => {
-        pdf.text(`• ${inv.name}: MYR ${inv.totalValue.toFixed(2)} (${inv.gainLossPercentage > 0 ? '+' : ''}${inv.gainLossPercentage.toFixed(2)}%)`, margin + 5, yPosition);
+        pdf.text(`• ${inv.name}: ₹ ${inv.totalValue.toFixed(2)} (${inv.gainLossPercentage > 0 ? '+' : ''}${inv.gainLossPercentage.toFixed(2)}%)`, margin + 5, yPosition);
         yPosition += 5;
       });
       yPosition += 10;

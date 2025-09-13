@@ -158,16 +158,16 @@ export const generateFinancialStatement = async (req, res, next) => {
           <table>
             <tr>
               <td>Total Assets</td>
-              <td>$${totalAssets.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+              <td>₹${totalAssets.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
             </tr>
             <tr>
               <td>Total Liabilities</td>
-              <td>$${totalLiabilities.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+              <td>₹${totalLiabilities.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
             </tr>
             <tr class="total">
               <td>Net Worth</td>
               <td class="${netWorth >= 0 ? 'positive' : 'negative'}">
-                $${netWorth.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                ₹${netWorth.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </td>
             </tr>
           </table>
@@ -188,14 +188,14 @@ export const generateFinancialStatement = async (req, res, next) => {
                 <tr>
                   <td>${asset.name}</td>
                   <td>${asset.type}</td>
-                  <td>$${(asset.currentValue || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                  <td>₹${(asset.currentValue || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                 </tr>
               `).join('')}
             </tbody>
             <tfoot>
               <tr class="total">
                 <td colspan="2">Total Assets</td>
-                <td>$${totalAssets.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                <td>₹${totalAssets.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
               </tr>
             </tfoot>
           </table>
@@ -217,7 +217,7 @@ export const generateFinancialStatement = async (req, res, next) => {
                 <tr>
                   <td>${liability.name}</td>
                   <td>${liability.type}</td>
-                  <td>$${(liability.currentBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                  <td>₹${(liability.currentBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                   <td>${(liability.interestRate || 0).toFixed(2)}%</td>
                 </tr>
               `).join('')}
@@ -225,7 +225,7 @@ export const generateFinancialStatement = async (req, res, next) => {
             <tfoot>
               <tr class="total">
                 <td colspan="2">Total Liabilities</td>
-                <td>$${totalLiabilities.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                <td>₹${totalLiabilities.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                 <td></td>
               </tr>
             </tfoot>
@@ -249,7 +249,7 @@ export const generateFinancialStatement = async (req, res, next) => {
                   <td>${new Date(tx.date).toLocaleDateString()}</td>
                   <td>${tx.description}</td>
                   <td class="${tx.amount >= 0 ? 'positive' : 'negative'}">
-                    $${Math.abs(tx.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    ₹${Math.abs(tx.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </td>
                   <td>${tx.category}</td>
                 </tr>
