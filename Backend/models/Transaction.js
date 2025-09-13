@@ -1,11 +1,10 @@
 import mongoose from 'mongoose';
 
 const transactionSchema = new mongoose.Schema({
-  user: {
+  userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
-    index: true
+    required: true
   },
   amount: {
     type: Number,
@@ -13,17 +12,25 @@ const transactionSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['income', 'expense', 'transfer'],
-    required: true
+    required: true,
+    enum: ['income', 'expense']
+  },
+  description: {
+    type: String,
+    required: true,
+    trim: true
   },
   category: {
     type: String,
     required: true,
     enum: [
-      'salary', 'freelance', 'investment', 'business', 'other_income',
-      'food', 'shopping', 'rent', 'utilities', 'transport', 'entertainment',
-      'healthcare', 'education', 'bills', 'emi', 'savings', 'insurance',
-      'travel', 'groceries', 'fuel', 'subscription', 'other_expense'
+      // Income categories
+      'salary', 'bonus', 'freelance', 'business_income', 'rental_income', 'investment_income', 'other_income',
+      // Expense categories
+      'food_dining', 'groceries', 'transportation', 'fuel', 'utilities', 'rent_mortgage', 'insurance',
+      'healthcare', 'education', 'entertainment', 'shopping', 'travel', 'personal_care', 'gifts_donations',
+      'home_maintenance', 'subscriptions', 'taxes', 'loan_payment', 'credit_card_payment', 'savings',
+      'investment', 'emergency_fund', 'other_expense'
     ]
   },
   subcategory: {

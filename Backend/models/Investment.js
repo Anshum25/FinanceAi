@@ -1,35 +1,10 @@
 import mongoose from 'mongoose';
 
-const investmentSchema = new mongoose.Schema(
-  {
-    user: {
-      type: mongoose.Schema.ObjectId,
-      ref: 'User',
-      required: [true, 'Investment must belong to a user'],
-    },
-    type: {
-      type: String,
-      required: [true, 'Please specify the investment type'],
-      enum: [
-        'stock',
-        'mutual_fund',
-        'etf',
-        'bonds',
-        'real_estate',
-        'crypto',
-        'retirement',
-        'other',
-      ],
-    },
-    symbol: {
-      type: String,
-      trim: true,
-      uppercase: true,
-    },
-    name: {
-      type: String,
-      required: [true, 'Please provide a name for this investment'],
-      trim: true,
+const investmentSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
     },
     quantity: {
       type: Number,

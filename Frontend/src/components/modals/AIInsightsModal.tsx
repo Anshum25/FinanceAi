@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
   DialogTitle,
-  DialogDescription 
+  DialogDescription
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  AlertTriangle, 
-  Target, 
+import {
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
+  Target,
   PiggyBank,
   CreditCard,
   Loader2,
@@ -40,10 +40,10 @@ interface Insight {
   followUpQuestions?: string[];
 }
 
-const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  onAskQuestion 
+const AIInsightsModal: React.FC<AIInsightsModalProps> = ({
+  isOpen,
+  onClose,
+  onAskQuestion
 }) => {
   const { getFilteredData, permissions } = useFinancial();
   const [insights, setInsights] = useState<Insight[]>([]);
@@ -87,7 +87,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({
         const totalAssets = data.assets.reduce((sum, asset) => sum + asset.value, 0);
         const totalLiabilities = data.liabilities.reduce((sum, liability) => sum + liability.balance, 0);
         const netWorth = totalAssets - totalLiabilities;
-        
+
         generatedInsights.push({
           id: 'networth',
           type: netWorth > 0 ? 'positive' : 'warning',
@@ -107,7 +107,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({
       if (permissions.investments && data.investments && data.investments.length > 0) {
         const totalGains = data.investments.reduce((sum, inv) => sum + inv.gainLoss, 0);
         const avgGainPercentage = data.investments.reduce((sum, inv) => sum + inv.gainLossPercentage, 0) / data.investments.length;
-        
+
         generatedInsights.push({
           id: 'investments',
           type: totalGains >= 0 ? 'positive' : 'negative',
@@ -145,7 +145,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({
       if (permissions.liabilities && data.liabilities && data.liabilities.length > 0) {
         const totalDebt = data.liabilities.reduce((sum, liability) => sum + liability.balance, 0);
         const highInterestDebt = data.liabilities.filter(debt => debt.interestRate && debt.interestRate > 15);
-        
+
         generatedInsights.push({
           id: 'debt',
           type: highInterestDebt.length > 0 ? 'warning' : 'neutral',
@@ -181,7 +181,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({
   const getInsightBorderColor = (type: string) => {
     switch (type) {
       case 'positive': return 'border-l-success';
-      case 'negative': return 'border-l-danger';  
+      case 'negative': return 'border-l-danger';
       case 'warning': return 'border-l-warning';
       default: return 'border-l-primary';
     }
@@ -242,7 +242,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({
                       <p className="text-sm text-muted-foreground mb-3">
                         {insight.description}
                       </p>
-                      
+
                       {insight.actionable && (
                         <div className="p-3 bg-primary/5 rounded-lg mb-3">
                           <p className="text-sm font-medium text-primary">
@@ -290,7 +290,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({
         </div>
 
         <Separator />
-        
+
         <div className="flex justify-between items-center">
           <p className="text-xs text-muted-foreground">
             Insights are generated based on your permitted data categories

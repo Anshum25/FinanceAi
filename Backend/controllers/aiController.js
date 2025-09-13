@@ -1,41 +1,142 @@
+// Enhanced AI controller with comprehensive financial data access
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import axios from 'axios';
-import { faker } from '@faker-js/faker';
-import AppError from '../utils/appError.js';
+import User from '../models/User.js';
 import Transaction from '../models/Transaction.js';
 import Asset from '../models/Asset.js';
 import Liability from '../models/Liability.js';
 import Investment from '../models/Investment.js';
+import EPF from '../models/EPF.js';
+import CreditScore from '../models/CreditScore.js';
+import AccountSummary from '../models/AccountSummary.js';
+import AppError from '../utils/appError.js';
+import { faker } from '@faker-js/faker';
+
+// Initialize Gemini AI
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// Get comprehensive financial data for AI context
+const getFinancialContext = async (userId) => {
+  try {
+    const [user, summary, transactions, assets, liabilities, investments, epf, creditScore] = await Promise.all([
+      User.findById(userId).select('name email preferences'),
+      AccountSummary.findOne({ userId }),
+      Transaction.find({ userId }).sort({ date: -1 }).limit(50),
+      Asset.find({ userId, isActive: true }),
+      Liability.find({ userId, isActive: true }),
+      Investment.find({ userId, isActive: true }),
+      EPF.findOne({ userId, isActive: true }),
+      CreditScore.getLatestScore(userId)
+    ]);
+
+    // Calculate additional metrics
+    const totalAssets = assets.reduce((sum, asset) => sum + asset.balance, 0);
+    const totalLiabilities = liabilities.reduce((sum, liability) => sum + liability.currentBalance, 0);
+    const totalInvestments = investments.reduce((sum, investment) => sum + investment.currentValue, 0);
+    const netWorth = totalAssets + totalInvestments - totalLiabilities;
+
+    // Get income vs expense summary for last 3 months
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    const incomeExpenseSummary = await Transaction.getIncomeExpenseSummary(userId, threeMonthsAgo, new Date());
+
+    return {
+      user,
+      summary,
+      recentTransactions: transactions,
+      assets: {
+        items: assets,
+        total: totalAssets,
+        bankAccounts: assets.filter(a => ['bank_account', 'savings_account', 'current_account'].includes(a.type)),
+        cash: assets.filter(a => a.type === 'cash'),
+        fixedDeposits: assets.filter(a => a.type === 'fd')
+      },
+      liabilities: {
+        items: liabilities,
+        total: totalLiabilities,
+        loans: liabilities.filter(l => l.type.includes('loan')),
+        creditCards: liabilities.filter(l => l.type === 'credit_card')
+      },
+      investments: {
+        items: investments,
+        total: totalInvestments,
+        stocks: investments.filter(i => i.type === 'stocks'),
+        mutualFunds: investments.filter(i => i.type === 'mutual_funds'),
+        etfs: investments.filter(i => i.type === 'etf')
+      },
+      epf,
+      creditScore,
+      financialMetrics: {
+        netWorth,
+        totalAssets,
+        totalLiabilities,
+        totalInvestments,
+        debtToIncomeRatio: summary?.monthlyIncome ? (totalLiabilities / (summary.monthlyIncome * 12)) * 100 : 0,
+        savingsRate: summary?.monthlySavings && summary?.monthlyIncome ? (summary.monthlySavings / summary.monthlyIncome) * 100 : 0
+      },
+      incomeExpenseSummary
+    };
+  } catch (error) {
+    console.error('Error fetching financial context:', error);
+    return null;
+  }
+};
 
 // Generate sample data for new users
 const generateSampleData = async (userId) => {
+  console.log('🔄 Generating sample data for user:', userId);
+  
   // Create sample transactions
   const sampleTransactions = [
-    { user: userId, amount: 5000, type: 'income', category: 'salary', description: 'Monthly salary', date: new Date('2025-01-01') },
-    { user: userId, amount: -150, type: 'expense', category: 'food', description: 'Grocery shopping', date: new Date('2025-01-10') },
-    { user: userId, amount: -50, type: 'expense', category: 'transport', description: 'Uber ride', date: new Date('2025-01-09') },
-    { user: userId, amount: -80, type: 'expense', category: 'utilities', description: 'Electricity bill', date: new Date('2025-01-08') },
-    { user: userId, amount: -200, type: 'expense', category: 'entertainment', description: 'Movie and dinner', date: new Date('2025-01-07') }
+    { userId: userId, amount: 5000, type: 'income', category: 'salary', description: 'Monthly salary', date: new Date('2025-01-01') },
+    { userId: userId, amount: 150, type: 'expense', category: 'groceries', description: 'Grocery shopping', date: new Date('2025-01-10') },
+    { userId: userId, amount: 50, type: 'expense', category: 'transportation', description: 'Uber ride', date: new Date('2025-01-09') },
+    { userId: userId, amount: 80, type: 'expense', category: 'utilities', description: 'Electricity bill', date: new Date('2025-01-08') },
+    { userId: userId, amount: 200, type: 'expense', category: 'entertainment', description: 'Movie and dinner', date: new Date('2025-01-07') }
   ];
   
   const sampleAssets = [
-    { user: userId, type: 'savings', name: 'Savings Account', currentValue: 25000, isLiquid: true },
-    { user: userId, type: 'checking', name: 'Checking Account', currentValue: 5000, isLiquid: true }
+    { userId: userId, type: 'savings_account', name: 'Savings Account', balance: 25000 },
+    { userId: userId, type: 'current_account', name: 'Checking Account', balance: 5000 },
+    { userId: userId, type: 'cash', name: 'Cash in Hand', balance: 2000 }
   ];
   
   const sampleLiabilities = [
-    { user: userId, type: 'credit_card', name: 'Credit Card', currentBalance: 2500, interestRate: 18.5 }
+    { 
+      userId: userId, 
+      type: 'credit_card', 
+      name: 'Credit Card', 
+      lender: 'HDFC Bank',
+      originalAmount: 50000,
+      currentBalance: 2500, 
+      interestRate: 18.5,
+      monthlyPayment: 500,
+      startDate: new Date('2024-01-01'),
+      nextDueDate: new Date('2025-02-15'),
+      creditLimit: 50000,
+      availableCredit: 47500,
+      minimumPayment: 250
+    }
   ];
   
   const sampleInvestments = [
-    { user: userId, type: 'stock', name: 'Apple Inc.', currentValue: 15000, quantity: 100, purchasePrice: 120 }
+    { userId: userId, type: 'stock', name: 'Apple Inc.', currentValue: 15000, quantity: 100, purchasePrice: 120 }
   ];
   
-  await Promise.all([
-    Transaction.insertMany(sampleTransactions),
-    Asset.insertMany(sampleAssets),
-    Liability.insertMany(sampleLiabilities),
-    Investment.insertMany(sampleInvestments)
-  ]);
+  try {
+    console.log('📊 Creating transactions...');
+    await Transaction.insertMany(sampleTransactions);
+    console.log('💰 Creating assets...');
+    await Asset.insertMany(sampleAssets);
+    console.log('💳 Creating liabilities...');
+    await Liability.insertMany(sampleLiabilities);
+    console.log('📈 Creating investments...');
+    await Investment.insertMany(sampleInvestments);
+    console.log('✅ All sample data created successfully');
+  } catch (error) {
+    console.error('❌ Error creating sample data:', error);
+    throw error;
+  }
 };
 
 // Generate a response using Gemini
@@ -48,19 +149,56 @@ export const generateAIResponse = async (req, res, next) => {
       return next(new AppError('Please provide a message', 400));
     }
     
-    // Check if user has any data, if not generate sample data
-    const transactionCount = await Transaction.countDocuments({ user: userId });
-    if (transactionCount === 0) {
-      await generateSampleData(userId);
-    }
+    // Try to get existing data, if none exists or validation fails, create sample data
+    let transactions, assets, liabilities, investments;
     
-    // Get user's financial data
-    const [transactions, assets, liabilities, investments] = await Promise.all([
-      Transaction.find({ user: userId }).sort('-date').limit(50),
-      Asset.find({ user: userId }),
-      Liability.find({ user: userId }),
-      Investment.find({ user: userId }),
-    ]);
+    try {
+      [transactions, assets, liabilities, investments] = await Promise.all([
+        Transaction.find({ userId: userId }).sort('-date').limit(50),
+        Asset.find({ userId: userId }),
+        Liability.find({ userId: userId }),
+        Investment.find({ userId: userId }),
+      ]);
+      
+      // If no data exists, generate sample data
+      if (transactions.length === 0) {
+        await generateSampleData(userId);
+        [transactions, assets, liabilities, investments] = await Promise.all([
+          Transaction.find({ userId: userId }).sort('-date').limit(50),
+          Asset.find({ userId: userId }),
+          Liability.find({ userId: userId }),
+          Investment.find({ userId: userId }),
+        ]);
+      }
+    } catch (error) {
+      // If there are validation errors with existing data, clear and regenerate
+      console.log('🧹 Clearing invalid data and regenerating:', error.message);
+      try {
+        await Transaction.deleteMany({ userId: userId });
+        await Asset.deleteMany({ userId: userId });
+        await Liability.deleteMany({ userId: userId });
+        await Investment.deleteMany({ userId: userId });
+        console.log('✅ Old data cleared successfully');
+        
+        await generateSampleData(userId);
+        console.log('✅ New sample data generated successfully');
+        
+        [transactions, assets, liabilities, investments] = await Promise.all([
+          Transaction.find({ userId: userId }).sort('-date').limit(50),
+          Asset.find({ userId: userId }),
+          Liability.find({ userId: userId }),
+          Investment.find({ userId: userId }),
+        ]);
+        console.log('✅ Fresh data retrieved successfully');
+      } catch (regenerationError) {
+        console.error('❌ Error during data regeneration:', regenerationError);
+        // If regeneration fails, provide minimal fallback data
+        transactions = [];
+        assets = [];
+        liabilities = [];
+        investments = [];
+      }
+    }
 
     // Prepare user's financial data as JSON
     const userData = {
@@ -115,15 +253,18 @@ Please provide a helpful response based on their actual financial data. If they 
     if (process.env.GEMINI_API_KEY) {
       try {
         // Try Gemini Flash first (faster and cheaper)
+        console.log('🚀 Calling Gemini Flash API...');
         aiResponse = await callGeminiAPI(prompt, 'gemini-1.5-flash');
       } catch (flashError) {
-        console.log("Gemini Flash failed, trying Pro model:", flashError.message);
+        console.log("⚠️ Gemini Flash failed, trying Pro model:", flashError.message);
         
         try {
           // Fallback to Pro model
+          console.log('🚀 Calling Gemini Pro API...');
           aiResponse = await callGeminiAPI(prompt, 'gemini-1.5-pro');
         } catch (proError) {
-          console.error('Both Gemini models failed:', proError);
+          console.error('❌ Both Gemini models failed:', proError);
+          console.log('🔄 Using fallback response...');
           aiResponse = generateFallbackResponse(message, userData);
         }
       }
@@ -170,7 +311,9 @@ const callGeminiAPI = async (prompt, model = 'gemini-1.5-flash') => {
       },
     });
 
-    return response.data.candidates[0].content.parts[0].text;
+    const geminiResponse = response.data.candidates[0].content.parts[0].text;
+    console.log('✅ Gemini API Response:', geminiResponse);
+    return geminiResponse;
   } catch (error) {
     // Handle specific Gemini API errors
     if (error.response?.status === 401 || error.response?.status === 403) {
@@ -196,9 +339,9 @@ const generateFallbackResponse = (message, userData) => {
     .filter(tx => tx.type === 'income')
     .reduce((sum, tx) => sum + tx.amount, 0);
   
-  const monthlyExpenses = Math.abs(userData.transactions
+  const monthlyExpenses = userData.transactions
     .filter(tx => tx.type === 'expense')
-    .reduce((sum, tx) => sum + tx.amount, 0));
+    .reduce((sum, tx) => sum + tx.amount, 0);
   
   // Generate contextual responses based on the question
   if (lowerMessage.includes('spend') || lowerMessage.includes('expense')) {
@@ -226,6 +369,22 @@ const generateFallbackResponse = (message, userData) => {
     return `You currently have $${totalLiabilities.toFixed(2)} in total debt. ${totalLiabilities > 0 ? 'Consider focusing on paying down high-interest debt first.' : 'Great job staying debt-free!'}`;
   }
   
+  if (lowerMessage.includes('vacation') || lowerMessage.includes('afford') || lowerMessage.includes('trip')) {
+    const availableCash = totalAssets - totalLiabilities;
+    const monthlySavings = monthlyIncome - monthlyExpenses;
+    const emergencyFund = monthlyExpenses * 3; // 3 months emergency fund
+    const safeVacationBudget = Math.max(0, availableCash - emergencyFund);
+    
+    if (safeVacationBudget > 1000) {
+      return `Based on your finances, you could afford a vacation! You have $${safeVacationBudget.toFixed(2)} available after maintaining a 3-month emergency fund. Consider budgeting $${Math.min(safeVacationBudget * 0.5, monthlySavings * 2).toFixed(2)} for a vacation to stay financially secure.`;
+    } else if (monthlySavings > 0) {
+      const monthsToSave = Math.ceil(2000 / monthlySavings);
+      return `You're saving $${monthlySavings.toFixed(2)} per month. To afford a nice vacation, consider saving for ${monthsToSave} months to build up a vacation fund of $${(monthsToSave * monthlySavings).toFixed(2)}.`;
+    } else {
+      return `Based on your current finances, I'd recommend focusing on increasing your savings rate before planning a vacation. Try to reduce expenses or increase income to create a vacation fund.`;
+    }
+  }
+  
   // Default response
   return `I can help you analyze your finances! You have $${totalAssets.toFixed(2)} in assets, $${totalLiabilities.toFixed(2)} in liabilities, for a net worth of $${netWorth.toFixed(2)}. Your monthly income is $${monthlyIncome.toFixed(2)} and expenses are $${monthlyExpenses.toFixed(2)}. What would you like to know more about?`;
 };
@@ -237,10 +396,10 @@ export const getFinancialInsights = async (req, res, next) => {
     
     // Get all financial data
     const [transactions, assets, liabilities, investments] = await Promise.all([
-      Transaction.find({ user: userId }),
-      Asset.find({ user: userId }),
-      Liability.find({ user: userId }),
-      Investment.find({ user: userId }),
+      Transaction.find({ userId: userId }),
+      Asset.find({ userId: userId }),
+      Liability.find({ userId: userId }),
+      Investment.find({ userId: userId }),
     ]);
     
     // Calculate total assets and liabilities
@@ -257,9 +416,9 @@ export const getFinancialInsights = async (req, res, next) => {
       .filter(tx => tx.type === 'income')
       .reduce((sum, tx) => sum + (tx.amount || 0), 0);
     
-    const monthlyExpenses = Math.abs(recentTransactions
+    const monthlyExpenses = recentTransactions
       .filter(tx => tx.type === 'expense')
-      .reduce((sum, tx) => sum + (tx.amount || 0), 0));
+      .reduce((sum, tx) => sum + (tx.amount || 0), 0);
     
     // Calculate savings rate
     const savingsRate = monthlyIncome > 0 

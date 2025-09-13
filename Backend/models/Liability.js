@@ -1,86 +1,92 @@
 import mongoose from 'mongoose';
 
-const liabilitySchema = new mongoose.Schema(
-  {
-    user: {
-      type: mongoose.Schema.ObjectId,
-      ref: 'User',
-      required: [true, 'Liability must belong to a user'],
-    },
-    type: {
-      type: String,
-      required: [true, 'Please specify the liability type'],
-      enum: [
-        'credit_card',
-        'mortgage',
-        'student_loan',
-        'personal_loan',
-        'car_loan',
-        'medical_debt',
-        'other',
-      ],
-    },
-    name: {
-      type: String,
-      required: [true, 'Please provide a name for this liability'],
-      trim: true,
-    },
-    originalAmount: {
-      type: Number,
-      required: [true, 'Please provide the original amount'],
-      min: [0, 'Amount cannot be negative'],
-    },
-    currentBalance: {
-      type: Number,
-      required: [true, 'Please provide the current balance'],
-      min: [0, 'Balance cannot be negative'],
-    },
-    interestRate: {
-      type: Number,
-      min: [0, 'Interest rate cannot be negative'],
-      max: [100, 'Interest rate cannot exceed 100%'],
-    },
-    minimumPayment: {
-      type: Number,
-      min: [0, 'Payment cannot be negative'],
-    },
-    paymentDueDate: {
-      type: Date,
-    },
-    startDate: {
-      type: Date,
-    },
-    endDate: {
-      type: Date,
-    },
-    accountNumber: {
-      type: String,
-      trim: true,
-    },
-    institution: {
-      type: String,
-      trim: true,
-    },
-    description: {
-      type: String,
-      trim: true,
-    },
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
+const liabilitySchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
-  {
-    timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
+  type: {
+    type: String,
+    required: true,
+    enum: ['home_loan', 'personal_loan', 'car_loan', 'education_loan', 'credit_card', 'business_loan', 'other']
+  },
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  lender: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  accountNumber: {
+    type: String,
+    trim: true
+  },
+  originalAmount: {
+    type: Number,
+    required: [true, 'Please provide the original amount'],
+    min: [0, 'Amount cannot be negative'],
+  },
+  currentBalance: {
+    type: Number,
+    required: [true, 'Please provide the current balance'],
+    min: [0, 'Balance cannot be negative'],
+  },
+  interestRate: {
+    type: Number,
+    required: true,
+    min: [0, 'Interest rate cannot be negative'],
+    max: [100, 'Interest rate cannot exceed 100%'],
+  },
+  monthlyPayment: {
+    type: Number,
+    required: true,
+    min: [0, 'Payment cannot be negative'],
+  },
+  startDate: {
+    type: Date,
+    required: true
+  },
+  endDate: {
+    type: Date
+  },
+  nextDueDate: {
+    type: Date,
+    required: true
+  },
+  creditLimit: {
+    type: Number, // Only for credit cards
+    min: 0
+  },
+  availableCredit: {
+    type: Number, // Only for credit cards
+    min: 0
+  },
+  minimumPayment: {
+    type: Number, // For credit cards
+    min: 0
+  },
+  description: {
+    type: String,
+    trim: true,
+  },
+  isActive: {
+    type: Boolean,
+    default: true,
   }
-);
+}, {
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true },
+});
 
 // Indexes for better query performance
-liabilitySchema.index({ user: 1, type: 1 });
-liabilitySchema.index({ user: 1, isActive: 1 });
-liabilitySchema.index({ user: 1, paymentDueDate: 1 });
+liabilitySchema.index({ userId: 1, type: 1 });
+liabilitySchema.index({ userId: 1, isActive: 1 });
+liabilitySchema.index({ nextDueDate: 1 });
 
 // Virtual for calculating total paid
 liabilitySchema.virtual('amountPaid').get(function () {

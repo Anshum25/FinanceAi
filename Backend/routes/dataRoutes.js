@@ -3,7 +3,12 @@ import {
   getFinancialSummary, 
   getTransactions, 
   getCategoryAnalysis, 
-  getSpendingTrends 
+  getSpendingTrends,
+  getAssets,
+  getLiabilities,
+  getInvestments,
+  getEPFData,
+  getCreditScore
 } from '../controllers/dataController.js';
 import { protect } from '../controllers/authController.js';
 import { generalRateLimit } from '../middleware/security.js';
@@ -16,10 +21,17 @@ router.use(generalRateLimit);
 // Protect all routes
 router.use(protect);
 
-// Routes
+// Main financial data routes
 router.get('/summary', getFinancialSummary);
 router.get('/transactions', getTransactions);
 router.get('/categories', getCategoryAnalysis);
 router.get('/trends', getSpendingTrends);
+
+// Detailed section routes
+router.get('/assets', getAssets);
+router.get('/liabilities', getLiabilities);
+router.get('/investments', getInvestments);
+router.get('/epf', getEPFData);
+router.get('/credit-score', getCreditScore);
 
 export default router;
