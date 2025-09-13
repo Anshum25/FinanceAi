@@ -513,53 +513,7 @@ const calculateAndCreateSummary = async (userId) => {
   });
 };
 
-// Get user's assets
-export const getAssets = async (req, res, next) => {
-  try {
-    const userId = req.user._id;
-    const assets = await Asset.find({ user: userId }).sort({ createdAt: -1 });
-    
-    res.status(200).json({
-      status: 'success',
-      data: assets
-    });
-  } catch (err) {
-    console.error('Error in getAssets:', err);
-    next(new AppError('Error fetching assets', 500));
-  }
-};
 
-// Get user's liabilities
-export const getLiabilities = async (req, res, next) => {
-  try {
-    const userId = req.user._id;
-    const liabilities = await Liability.find({ user: userId }).sort({ createdAt: -1 });
-    
-    res.status(200).json({
-      status: 'success',
-      data: liabilities
-    });
-  } catch (err) {
-    console.error('Error in getLiabilities:', err);
-    next(new AppError('Error fetching liabilities', 500));
-  }
-};
-
-// Get user's investments
-export const getInvestments = async (req, res, next) => {
-  try {
-    const userId = req.user._id;
-    const investments = await Investment.find({ user: userId }).sort({ createdAt: -1 });
-    
-    res.status(200).json({
-      status: 'success',
-      data: investments
-    });
-  } catch (err) {
-    console.error('Error in getInvestments:', err);
-    next(new AppError('Error fetching investments', 500));
-  }
-};
 
 // Generate spending insights
 const generateSpendingInsights = (trends, summary) => {
