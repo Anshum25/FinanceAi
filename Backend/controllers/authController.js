@@ -49,14 +49,19 @@ export const login = async (req, res, next) => {
       return next(new AppError('Please provide email and password!', 400));
     }
 
-    // 2) Check if user exists && password is correct
+    // 2) Check if user exists
     const user = await User.findOne({ email }).select('+password');
-
-    if (!user || !(await user.correctPassword(password, user.password))) {
-      return next(new AppError('Incorrect email or password', 401));
+    if (!user) {
+      return next(new AppError('No registration found with this email', 404));
     }
 
-    // 3) If everything ok, send token to client
+    // 3) Check if password is correct
+    const valid = await user.correctPassword(password, user.password);
+    if (!valid) {
+      return next(new AppError('Incorrect password', 401));
+    }
+
+    // 4) If everything ok, send token to client
     createAndSendToken(user, 200, res);
   } catch (err) {
     next(err);

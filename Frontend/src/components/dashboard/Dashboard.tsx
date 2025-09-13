@@ -22,10 +22,11 @@ import { PDFReportGenerator } from '@/utils/pdfGenerator';
 
 interface DashboardProps {
   onTogglePermissions: () => void;
+  onOpenImport?: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions }) => {
-  const { getFilteredData, permissions } = useFinancial();
+const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions, onOpenImport }) => {
+  const { getFilteredData, permissions, awaitingImport } = useFinancial();
   const { addMessage } = useChat();
   const data = getFilteredData();
   
@@ -182,9 +183,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions }) => {
           {permissions.assets && permissions.liabilities && (
             <KPICard
               title="Net Worth"
-              value={`MYR ${netWorth.toLocaleString()}`}
-              change={netWorth > 0 ? '+5.2% this month' : undefined}
-              changeType={netWorth > 0 ? 'positive' : 'negative'}
+              value={awaitingImport ? '---' : `MYR ${netWorth.toLocaleString()}`}
+              change={awaitingImport ? undefined : (netWorth > 0 ? '+5.2% this month' : undefined)}
+              changeType={awaitingImport ? 'neutral' : (netWorth > 0 ? 'positive' : 'negative')}
               icon={netWorth > 0 ? TrendingUp : TrendingDown}
               delay={0}
             />
@@ -193,9 +194,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions }) => {
           {permissions.transactions && (
             <KPICard
               title="Monthly Spending"
-              value={`MYR ${monthlySpending.toLocaleString()}`}
-              change="-8.3% vs last month"
-              changeType="positive"
+              value={awaitingImport ? '---' : `MYR ${monthlySpending.toLocaleString()}`}
+              change={awaitingImport ? undefined : "-8.3% vs last month"}
+              changeType={awaitingImport ? 'neutral' : 'positive'}
               icon={CreditCard}
               delay={0.1}
             />
@@ -204,9 +205,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions }) => {
           {permissions.investments && data.investments && data.investments.length > 0 && (
             <KPICard
               title="Investments"
-              value={`MYR ${totalInvestmentValue.toLocaleString()}`}
-              change={`${totalInvestmentGains >= 0 ? '+' : ''}${((totalInvestmentGains / (totalInvestmentValue - totalInvestmentGains)) * 100).toFixed(1)}%`}
-              changeType={totalInvestmentGains >= 0 ? 'positive' : 'negative'}
+              value={awaitingImport ? '---' : `MYR ${totalInvestmentValue.toLocaleString()}`}
+              change={awaitingImport ? undefined : `${totalInvestmentGains >= 0 ? '+' : ''}${((totalInvestmentGains / (totalInvestmentValue - totalInvestmentGains)) * 100).toFixed(1)}%`}
+              changeType={awaitingImport ? 'neutral' : (totalInvestmentGains >= 0 ? 'positive' : 'negative')}
               icon={TrendingUp}
               delay={0.2}
             />
@@ -215,9 +216,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions }) => {
           {permissions.creditScore && data.creditScore && (
             <KPICard
               title="Credit Score"
-              value={data.creditScore.score.toString()}
-              change={data.creditScore.rating}
-              changeType={data.creditScore.score >= 700 ? 'positive' : 'neutral'}
+              value={awaitingImport ? '---' : data.creditScore.score.toString()}
+              change={awaitingImport ? undefined : data.creditScore.rating}
+              changeType={awaitingImport ? 'neutral' : (data.creditScore.score >= 700 ? 'positive' : 'neutral')}
               icon={PiggyBank}
               delay={0.3}
             />
@@ -226,7 +227,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions }) => {
 
         {/* Charts and Insights */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {permissions.transactions && data.transactions && (
+          {!awaitingImport && permissions.transactions && data.transactions && (
             <>
               <ExpenseChart transactions={data.transactions} />
               <ExpenseBreakdownChart transactions={data.transactions} />
@@ -234,25 +235,35 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions }) => {
           )}
           
           {/* Savings Forecast - Enhanced */}
-          {(!permissions.transactions || !data.transactions) && (
+          {(awaitingImport || !permissions.transactions || !data.transactions) && (
             <motion.div
               className="financial-card p-6"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: 0.4 }}
             >
-              <h3 className="text-lg font-semibold text-foreground mb-4">
-                Savings Forecast
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-foreground">
+                  {awaitingImport ? 'No data yet' : 'Savings Forecast'}
+                </h3>
+                {awaitingImport && (
+                  <Button size="sm" variant="gradient" onClick={onOpenImport}>Import Data</Button>
+                )}
+              </div>
               <div className="h-80 flex items-center justify-center bg-gradient-to-br from-success/5 to-success/10 rounded-lg">
                 <div className="text-center">
                   <TrendingUp className="w-12 h-12 text-success mx-auto mb-4" />
-                  <p className="text-muted-foreground mb-2">
-                    Savings trend analysis
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Enable transaction access to see your savings forecast
-                  </p>
+                  {awaitingImport ? (
+                    <>
+                      <p className="text-muted-foreground mb-2">All values are set to ---</p>
+                      <p className="text-xs text-muted-foreground">Import your data to unlock insights</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-muted-foreground mb-2">Savings trend analysis</p>
+                      <p className="text-xs text-muted-foreground">Enable transaction access to see your savings forecast</p>
+                    </>
+                  )}
                 </div>
               </div>
             </motion.div>

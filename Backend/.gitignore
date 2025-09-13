@@ -1,10 +1,7 @@
 # Dependencies
 node_modules/
 
-# Environment variables
-.env
-.env.*
-!.env.example
+
 
 # Logs
 logs
@@ -44,11 +41,6 @@ npm-debug.log*
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variables file
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
 
 # Next.js build output
 .next

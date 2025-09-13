@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ThemeProvider } from 'next-themes';
 import { FinancialProvider } from '@/contexts/FinancialContext';
 import { ChatProvider } from '@/contexts/ChatContext';
@@ -9,21 +9,30 @@ import ChatInterface from '@/components/chat/ChatInterface';
 import { Button } from '@/components/ui/button';
 import { MessageCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import ImportDataModal from '@/components/modals/ImportDataModal';
+import { useFinancial } from '@/contexts/FinancialContext';
 
-const FinanceApp: React.FC = () => {
+const InnerApp: React.FC = () => {
   const [isPrivacyPanelOpen, setIsPrivacyPanelOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const { awaitingImport } = useFinancial();
+  const [importOpen, setImportOpen] = useState(false);
+
+  const hasDismissed = (() => {
+    try { return localStorage.getItem("importDismissed") === "true"; } catch { return false; }
+  })();
+
+  const openImport = () => {
+    try { localStorage.removeItem("importDismissed"); } catch {}
+    setImportOpen(true);
+  };
+
+  useEffect(() => {
+    if (awaitingImport && !hasDismissed) setImportOpen(true);
+  }, [awaitingImport, hasDismissed]);
 
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
-      <FinancialProvider>
-        <ChatProvider>
-          <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
             {/* Navigation */}
             <Navbar
               onTogglePermissions={() => setIsPrivacyPanelOpen(true)}
@@ -33,6 +42,7 @@ const FinanceApp: React.FC = () => {
             {/* Main Dashboard */}
             <Dashboard 
               onTogglePermissions={() => setIsPrivacyPanelOpen(true)}
+              onOpenImport={openImport}
             />
 
             {/* Privacy Panel */}
@@ -45,6 +55,21 @@ const FinanceApp: React.FC = () => {
             <ChatInterface
               isOpen={isChatOpen}
               onClose={() => setIsChatOpen(false)}
+            />
+
+            {/* Import Data Modal */}
+            <ImportDataModal
+              open={importOpen}
+              onOpenChange={(open) => {
+                setImportOpen(open);
+                if (!open) {
+                  try {
+                    // If user closed the modal (X) without importing, remember dismissal
+                    const imported = localStorage.getItem("dataImported") === "true";
+                    if (!imported) localStorage.setItem("importDismissed", "true");
+                  } catch {}
+                }
+              }}
             />
 
             {/* Floating Chat Button (Mobile) */}
@@ -70,11 +95,23 @@ const FinanceApp: React.FC = () => {
                 </Button>
               </motion.div>
             )}
-          </div>
-        </ChatProvider>
-      </FinancialProvider>
-    </ThemeProvider>
+    </div>
   );
 };
+
+const FinanceApp: React.FC = () => (
+  <ThemeProvider
+    attribute="class"
+    defaultTheme="system"
+    enableSystem
+    disableTransitionOnChange
+  >
+    <FinancialProvider>
+      <ChatProvider>
+        <InnerApp />
+      </ChatProvider>
+    </FinancialProvider>
+  </ThemeProvider>
+);
 
 export default FinanceApp;

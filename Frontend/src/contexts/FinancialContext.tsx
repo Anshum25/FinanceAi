@@ -8,6 +8,8 @@ interface FinancialContextType {
   updatePermissions: (newPermissions: Partial<Permissions>) => void;
   getFilteredData: () => Partial<FinancialData>;
   isLoading: boolean;
+  awaitingImport: boolean;
+  setAwaitingImport: (val: boolean) => void;
 }
 
 const FinancialContext = createContext<FinancialContextType | undefined>(undefined);
@@ -24,6 +26,20 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [financialData] = useState<FinancialData>(mockFinancialData);
   const [permissions, setPermissions] = useState<Permissions>(defaultPermissions);
   const [isLoading, setIsLoading] = useState(false);
+  const [awaitingImport, _setAwaitingImport] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("awaitingImport") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const setAwaitingImport = (val: boolean) => {
+    _setAwaitingImport(val);
+    try {
+      localStorage.setItem("awaitingImport", String(val));
+    } catch {}
+  };
 
   const updatePermissions = (newPermissions: Partial<Permissions>) => {
     setIsLoading(true);
@@ -54,7 +70,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         permissions,
         updatePermissions,
         getFilteredData,
-        isLoading
+        isLoading,
+        awaitingImport,
+        setAwaitingImport,
       }}
     >
       {children}

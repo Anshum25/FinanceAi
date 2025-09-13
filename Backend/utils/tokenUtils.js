@@ -21,6 +21,13 @@ const createAndSendToken = (user, statusCode, res) => {
   // Remove password from output
   user.password = undefined;
 
+  // Set HttpOnly cookie so the browser includes it automatically
+  try {
+    res.cookie('jwt', token, cookieOptions);
+  } catch (e) {
+    // Fallback: continue responding with token in body
+  }
+
   res.status(statusCode).json({
     status: 'success',
     token,

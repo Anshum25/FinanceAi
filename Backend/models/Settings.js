@@ -6,7 +6,6 @@ const settingsSchema = new mongoose.Schema(
       type: mongoose.Schema.ObjectId,
       ref: 'User',
       required: [true, 'Settings must belong to a user'],
-      unique: true,
     },
     // Display preferences
     theme: {

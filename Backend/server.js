@@ -110,10 +110,12 @@ app.use(errorHandler);
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/financeai', {
-      // Remove deprecated options
+      // Force database name even if URI omits it
+      dbName: process.env.MONGODB_DB || 'FinanceAi',
     });
     
     console.log(`MongoDB Connected: ${conn.connection.host}`);
+    console.log(`MongoDB Database: ${conn.connection.name}`);
     
     // Handle connection events
     mongoose.connection.on('error', (err) => {
@@ -133,18 +135,30 @@ const connectDB = async () => {
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received. Shutting down gracefully...');
-  mongoose.connection.close(() => {
-    console.log('MongoDB connection closed.');
-    process.exit(0);
-  });
+  mongoose.connection
+    .close()
+    .then(() => {
+      console.log('MongoDB connection closed.');
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error('Error closing MongoDB connection:', err);
+      process.exit(1);
+    });
 });
 
 process.on('SIGINT', () => {
   console.log('SIGINT received. Shutting down gracefully...');
-  mongoose.connection.close(() => {
-    console.log('MongoDB connection closed.');
-    process.exit(0);
-  });
+  mongoose.connection
+    .close()
+    .then(() => {
+      console.log('MongoDB connection closed.');
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error('Error closing MongoDB connection:', err);
+      process.exit(1);
+    });
 });
 
 // Start server
