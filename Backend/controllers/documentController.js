@@ -3,6 +3,8 @@ import User from '../models/User.js';
 import AppError from '../utils/appError.js';
 import fs from 'fs/promises';
 import path from 'path';
+import { processDocument as extractWithAI, processDocumentByType } from '../services/documentProcessor.js';
+import { ingestBankStatement, ingestEPF, ingestCAS, ingestCreditReport } from '../services/ingestionService.js';
 
 export const uploadDocuments = async (req, res, next) => {
   try {
@@ -98,6 +100,73 @@ export const getDocuments = async (req, res, next) => {
       }
     });
   } catch (err) {
+    next(err);
+  }
+};
+
+// Process a previously uploaded document: extract data and persist into domain collections
+export const processUploadedDocument = async (req, res, next) => {
+  try {
+    const doc = await Document.findOne({ _id: req.params.id, user: req.user._id });
+    if (!doc) return next(new AppError('Document not found', 404));
+
+    // Read file buffer from saved path
+    const fileBuffer = await fs.readFile(doc.path);
+
+    // Mark processing
+    await Document.findByIdAndUpdate(doc._id, { processingStatus: 'processing', processingError: null });
+
+    // Create a Multer-like object for the existing processor
+    const fakeFile = {
+      mimetype: doc.mimeType || 'application/pdf',
+      buffer: fileBuffer,
+      originalname: doc.originalName,
+    };
+
+    // Extract structured data using the AI-based processor (by type)
+    const extracted = await processDocumentByType(fakeFile, doc.documentType || 'assetStatement');
+
+    // Ingest based on document type
+    let ingestResult;
+    switch (doc.documentType) {
+      case 'epfPassbook':
+        ingestResult = await ingestEPF({ userId: req.user._id, documentId: doc._id, extracted });
+        break;
+      case 'mutualFundCAS':
+        ingestResult = await ingestCAS({ userId: req.user._id, documentId: doc._id, extracted });
+        break;
+      case 'creditReport':
+        ingestResult = await ingestCreditReport({ userId: req.user._id, documentId: doc._id, extracted });
+        break;
+      case 'assetStatement':
+      default:
+        ingestResult = await ingestBankStatement({ userId: req.user._id, documentId: doc._id, extracted });
+        break;
+    }
+
+    // Update Document status and store a compact summary of extracted data
+    await Document.findByIdAndUpdate(doc._id, {
+      processed: true,
+      extractedData: {
+        accountNumber: extracted?.accountNumber || null,
+        period: extracted?.statementPeriod || null,
+        summary: extracted?.summary || null,
+        transactionsCount: Array.isArray(extracted?.transactions) ? extracted.transactions.length : 0,
+      },
+      processingStatus: 'completed',
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        documentId: doc._id,
+        ingestResult,
+      },
+    });
+  } catch (err) {
+    try {
+      await Document.findByIdAndUpdate(req.params.id, { processingStatus: 'failed', processingError: err.message });
+    } catch {}
     next(err);
   }
 };

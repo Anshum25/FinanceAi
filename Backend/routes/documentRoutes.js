@@ -3,7 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { protect } from '../controllers/authController.js';
-import { uploadDocuments, getDocuments, deleteDocument, checkDocumentsForPermissions } from '../controllers/documentController.js';
+import { uploadDocuments, getDocuments, deleteDocument, checkDocumentsForPermissions, processUploadedDocument } from '../controllers/documentController.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -43,6 +43,9 @@ const upload = multer({
 
 // Upload documents
 router.post('/upload', upload.array('documents', 20), uploadDocuments);
+
+// Process a previously uploaded document (extract + ingest)
+router.post('/:id/process', processUploadedDocument);
 
 // Get user's documents
 router.get('/', getDocuments);

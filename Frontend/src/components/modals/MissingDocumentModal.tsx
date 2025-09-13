@@ -96,13 +96,28 @@ const MissingDocumentModal: React.FC<MissingDocumentModalProps> = ({
 
     setIsUploading(true);
     try {
-      await api.uploadDocuments(documentInfo.documentType, files);
-      
-      toast({ 
-        title: "Upload successful", 
-        description: "Your documents have been uploaded and processed." 
-      });
-      
+      const res: any = await api.uploadDocuments(documentInfo.documentType, files);
+
+      const docs: any[] = res?.data?.documents || [];
+      if (!docs.length) {
+        toast({ title: "Uploaded", description: "No documents returned from server.", variant: "default" });
+      } else {
+        // Kick off processing for each uploaded document sequentially to surface errors clearly
+        for (const d of docs) {
+          try {
+            await api.processDocument(d._id);
+          } catch (procErr: any) {
+            toast({ title: "Process failed", description: procErr?.message || "Unable to process a document.", variant: "destructive" });
+            // continue processing others
+          }
+        }
+
+        toast({ 
+          title: "Upload successful", 
+          description: "Documents uploaded and processed. Refreshing data..." 
+        });
+      }
+
       onDocumentUploaded?.();
       onOpenChange(false);
       setFiles([]);

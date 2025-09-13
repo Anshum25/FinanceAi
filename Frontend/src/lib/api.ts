@@ -117,6 +117,12 @@ export const api = {
     });
   },
 
+  async processDocument(documentId: string) {
+    return request<{ status: string; data: { documentId: string; ingestResult: any } }>(`/api/documents/${documentId}/process`, {
+      method: "POST",
+    });
+  },
+
   // Profile management endpoints
   async updateProfile(profileData: { name: string; email: string; phone: string }) {
     return request<{ status: string; data: { user: ApiUser } }>("/api/auth/profile", {

@@ -18,6 +18,65 @@ const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
  * @returns {Promise<Object>} Structured financial data
  */
 export const processDocument = async (file) => {
+  // Backward-compat: default to bank-style assetStatement processing
+  return processDocumentByType(file, 'assetStatement');
+};
+
+export const extractDataWithAIForType = async (content, docType = 'assetStatement') => {
+  if (docType === 'assetStatement') {
+    return extractDataWithAI(content);
+  }
+
+  try {
+    let schema;
+    if (docType === 'epfPassbook') {
+      schema = `{
+  "uanNumber": "string | null",
+  "pfAccountNumber": "string | null",
+  "employerName": "string | null",
+  "employeeContribution": "number | null",
+  "employerContribution": "number | null",
+  "pensionFundContribution": "number | null",
+  "monthlyContribution": "number | null",
+  "totalBalance": "number | null",
+  "lastUpdated": "string | null"
+}`;
+    } else if (docType === 'mutualFundCAS') {
+      schema = `{
+  "holdings": [
+    { "name": "string", "type": "mutual_fund", "quantity": "number | null", "currentPrice": "number | null", "totalValue": "number | null", "purchasePrice": "number | null" }
+  ]
+}`;
+    } else if (docType === 'creditReport') {
+      schema = `{
+  "score": "number",
+  "rating": "string | null",
+  "category": "string | null",
+  "factors": ["string"],
+  "reportedAt": "string | null"
+}`;
+    } else {
+      // Fallback to generic extraction
+      return extractDataWithAI(content);
+    }
+
+    const prompt = `You are a highly accurate financial data extraction engine. Convert the document to JSON according to the schema exactly. No extra text.\n\nSchema:\n${schema}\n\nDocument Content:\n${content}\n\nReturn only valid JSON.`;
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    const cleanedText = text.replace(/```json\n?|\n?```/g, '').trim();
+    return JSON.parse(cleanedText);
+  } catch (error) {
+    console.error('AI extraction (typed) error:', error);
+    throw new Error(`AI typed extraction failed: ${error.message}`);
+  }
+};
+/**
+ * Process document with a specific target type to control AI schema
+ * @param {Object} file - Multer-like file object { mimetype, buffer, originalname }
+ * @param {('assetStatement'|'epfPassbook'|'mutualFundCAS'|'creditReport')} docType
+ */
+export const processDocumentByType = async (file, docType = 'assetStatement') => {
   try {
     let parsedContent;
     
@@ -39,7 +98,7 @@ export const processDocument = async (file) => {
     }
 
     // Extract structured data using AI
-    const structuredData = await extractDataWithAI(parsedContent);
+    const structuredData = await extractDataWithAIForType(parsedContent, docType);
     
     return structuredData;
   } catch (error) {
