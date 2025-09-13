@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useChat } from '@/contexts/ChatContext';
 import { useFinancial } from '@/contexts/FinancialContext';
-import { InsightEngine } from '@/utils/insightEngine';
+import { chatAPI } from '@/services/api';
 import { Badge } from '@/components/ui/badge';
 import { useVoiceInput, useTextToSpeech } from '@/hooks/useVoiceInput';
 
@@ -75,34 +75,38 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onClose }) => {
     // Set typing state
     setTyping(true);
 
-    // Simulate AI processing delay
-    setTimeout(async () => {
-      const filteredData = getFilteredData();
-      const insightEngine = new InsightEngine(filteredData);
-      
-      try {
-        const response = await insightEngine.processNaturalLanguageQuery(userMessage);
-        const dataUsed = getDataCategoriesUsed(userMessage);
-        
-        addMessage({
-          role: 'assistant',
-          content: response,
-          dataUsed
-        });
-
-        // Optionally speak the response
-        if (ttsSupported && response.length < 200) {
-          speak(response);
+    // Call backend API for AI response
+    try {
+      const response = await chatAPI.sendMessage({
+        message: userMessage,
+        context: {
+          messages: messages.slice(-5).map(msg => ({
+            role: msg.role,
+            content: msg.content
+          }))
         }
-      } catch (error) {
-        addMessage({
-          role: 'assistant',
-          content: "I'm sorry, I encountered an error processing your request. Please try again."
-        });
-      } finally {
-        setTyping(false);
+      });
+      
+      const dataUsed = getDataCategoriesUsed(userMessage);
+      
+      addMessage({
+        role: 'assistant',
+        content: response,
+        dataUsed
+      });
+
+      // Optionally speak the response
+      if (ttsSupported && response.length < 200) {
+        speak(response);
       }
-    }, 1500);
+    } catch (error) {
+      addMessage({
+        role: 'assistant',
+        content: "I'm sorry, I encountered an error processing your request. Please try again."
+      });
+    } finally {
+      setTyping(false);
+    }
   };
 
   const getDataCategoriesUsed = (query: string): string[] => {

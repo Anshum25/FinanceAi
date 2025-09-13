@@ -18,276 +18,260 @@ export class InsightEngine {
 
     // Calculate spending for different periods
     const lastMonthSpending = this.calculateSpending(transactions, lastMonth, now);
-    const previousMonthSpending = this.calculateSpending(transactions, subMonths(lastMonth, 1), lastMonth);
-    const avgThreeMonthSpending = this.calculateSpending(transactions, threeMonthsAgo, now) / 3;
+    const threeMonthSpending = this.calculateSpending(transactions, threeMonthsAgo, now);
 
-    let severity: 'info' | 'warning' | 'success' | 'error' = 'info';
-    let content = `You spent MYR ${lastMonthSpending.toFixed(2)} last month.`;
-
-    // Check for unusual spending patterns
-    const increaseFromPrevious = ((lastMonthSpending - previousMonthSpending) / previousMonthSpending) * 100;
-    const increaseFromAverage = ((lastMonthSpending - avgThreeMonthSpending) / avgThreeMonthSpending) * 100;
-
-    if (increaseFromAverage > 20) {
-      severity = 'warning';
-      content += ` This is ${increaseFromAverage.toFixed(1)}% higher than your 3-month average. Consider reviewing your recent purchases.`;
-    } else if (increaseFromPrevious < -10) {
-      severity = 'success';
-      content += ` Great job! You reduced spending by ${Math.abs(increaseFromPrevious).toFixed(1)}% compared to the previous month.`;
-    }
-
-    // Add top spending categories
-    const categories = this.getTopSpendingCategories(transactions, lastMonth, now);
-    if (categories.length > 0) {
-      content += ` Your top spending categories were: ${categories.slice(0, 3).map(c => `${c.category} (MYR ${c.amount.toFixed(2)})`).join(', ')}.`;
-    }
+    const avgMonthlySpending = threeMonthSpending / 3;
+    const spendingChange = ((lastMonthSpending - avgMonthlySpending) / avgMonthlySpending) * 100;
 
     return {
-      id: '',
-      title: 'Spending Pattern Analysis',
-      content,
+      id: 'spending-analysis',
       type: 'spending',
-      severity,
-      dataUsed: ['transactions'],
-      timestamp: ''
+      title: 'Spending Analysis',
+      description: this.generateSpendingDescription(lastMonthSpending, spendingChange),
+      severity: this.getSpendingSeverity(spendingChange),
+      actionItems: this.generateSpendingActions(spendingChange),
+      data: {
+        lastMonthSpending,
+        avgMonthlySpending,
+        spendingChange
+      }
     };
   }
 
-  generateSavingsForecast(): AIInsight | null {
+  generateIncomeAnalysis(): AIInsight | null {
     if (!this.data.transactions) return null;
 
     const transactions = this.data.transactions;
     const now = new Date();
+    const lastMonth = subMonths(now, 1);
     const threeMonthsAgo = subMonths(now, 3);
 
-    const avgMonthlyIncome = this.calculateIncome(transactions, threeMonthsAgo, now) / 3;
-    const avgMonthlyExpenses = Math.abs(this.calculateSpending(transactions, threeMonthsAgo, now)) / 3;
-    const monthlySavings = avgMonthlyIncome - avgMonthlyExpenses;
-
-    const threeMonthForecast = monthlySavings * 3;
-
-    let severity: 'info' | 'warning' | 'success' | 'error' = 'info';
-    let content = `Based on your current patterns, you're saving MYR ${monthlySavings.toFixed(2)} per month.`;
-
-    if (monthlySavings > 0) {
-      severity = 'success';
-      content += ` At this rate, you'll save MYR ${threeMonthForecast.toFixed(2)} over the next 3 months.`;
-    } else {
-      severity = 'warning';
-      content += ` You're currently spending more than you earn. Consider reducing expenses to improve your savings rate.`;
-    }
+    const lastMonthIncome = this.calculateIncome(transactions, lastMonth, now);
+    const threeMonthIncome = this.calculateIncome(transactions, threeMonthsAgo, now);
+    const avgMonthlyIncome = threeMonthIncome / 3;
+    const incomeChange = ((lastMonthIncome - avgMonthlyIncome) / avgMonthlyIncome) * 100;
 
     return {
-      id: '',
-      title: 'Savings Forecast',
-      content,
-      type: 'savings',
-      severity,
-      dataUsed: ['transactions'],
-      timestamp: ''
+      id: 'income-analysis',
+      type: 'income',
+      title: 'Income Analysis',
+      description: this.generateIncomeDescription(lastMonthIncome, incomeChange),
+      severity: this.getIncomeSeverity(incomeChange),
+      actionItems: this.generateIncomeActions(incomeChange),
+      data: {
+        lastMonthIncome,
+        avgMonthlyIncome,
+        incomeChange
+      }
     };
   }
 
-  generateDebtStrategy(): AIInsight | null {
+  generateSavingsAnalysis(): AIInsight | null {
+    if (!this.data.transactions) return null;
+
+    const transactions = this.data.transactions;
+    const now = new Date();
+    const lastMonth = subMonths(now, 1);
+
+    const lastMonthIncome = this.calculateIncome(transactions, lastMonth, now);
+    const lastMonthSpending = this.calculateSpending(transactions, lastMonth, now);
+    const savingsAmount = lastMonthIncome - lastMonthSpending;
+    const savingsRate = lastMonthIncome > 0 ? (savingsAmount / lastMonthIncome) * 100 : 0;
+
+    return {
+      id: 'savings-analysis',
+      type: 'savings',
+      title: 'Savings Analysis',
+      description: this.generateSavingsDescription(savingsAmount, savingsRate),
+      severity: this.getSavingsSeverity(savingsRate),
+      actionItems: this.generateSavingsActions(savingsRate),
+      data: {
+        savingsAmount,
+        savingsRate,
+        lastMonthIncome,
+        lastMonthSpending
+      }
+    };
+  }
+
+  generateDebtAnalysis(): AIInsight | null {
     if (!this.data.liabilities || this.data.liabilities.length === 0) return null;
 
-    const debts = this.data.liabilities.filter(l => l.type !== 'mortgage');
-    if (debts.length === 0) return null;
-
-    const totalDebt = debts.reduce((sum, debt) => sum + debt.balance, 0);
-    const totalMinPayments = debts.reduce((sum, debt) => sum + debt.minimumPayment, 0);
-
-    // Sort by interest rate for avalanche method
-    const sortedByRate = [...debts].sort((a, b) => b.interestRate - a.interestRate);
-    // Sort by balance for snowball method
-    const sortedByBalance = [...debts].sort((a, b) => a.balance - b.balance);
-
-    const highestRateDebt = sortedByRate[0];
-    const smallestDebt = sortedByBalance[0];
-
-    let content = `You have MYR ${totalDebt.toFixed(2)} in non-mortgage debt. `;
-
-    if (highestRateDebt.interestRate > 15) {
-      content += `Consider the "Avalanche Method": focus extra payments on your ${highestRateDebt.name} (${highestRateDebt.interestRate}% interest) to save on interest costs.`;
-    } else {
-      content += `Consider the "Snowball Method": focus on paying off your ${smallestDebt.name} (MYR ${smallestDebt.balance.toFixed(2)}) first for psychological wins.`;
-    }
+    const totalDebt = this.data.liabilities.reduce((sum, liability) => sum + (liability.currentBalance || 0), 0);
+    const highInterestDebt = this.data.liabilities.filter(l => (l.interestRate || 0) > 15);
+    const avgInterestRate = this.data.liabilities.reduce((sum, l) => sum + (l.interestRate || 0), 0) / this.data.liabilities.length;
 
     return {
-      id: '',
-      title: 'Debt Repayment Strategy',
-      content,
+      id: 'debt-analysis',
       type: 'debt',
-      severity: totalDebt > 10000 ? 'warning' : 'info',
-      dataUsed: ['liabilities'],
-      timestamp: ''
+      title: 'Debt Analysis',
+      description: this.generateDebtDescription(totalDebt, highInterestDebt.length, avgInterestRate),
+      severity: this.getDebtSeverity(totalDebt, avgInterestRate),
+      actionItems: this.generateDebtActions(highInterestDebt, avgInterestRate),
+      data: {
+        totalDebt,
+        highInterestDebtCount: highInterestDebt.length,
+        avgInterestRate
+      }
     };
   }
 
-  async processNaturalLanguageQuery(query: string): Promise<string> {
-    const lowerQuery = query.toLowerCase();
+  processNaturalLanguageQuery(query: string): AIInsight[] {
+    const insights: AIInsight[] = [];
+    const queryLower = query.toLowerCase();
 
-    // Spending queries
-    if (lowerQuery.includes('spend') || lowerQuery.includes('expense')) {
-      if (lowerQuery.includes('last month')) {
-        return this.handleSpendingQuery('last_month');
-      } else if (lowerQuery.includes('this month')) {
-        return this.handleSpendingQuery('this_month');
-      } else if (lowerQuery.includes('last 3 months') || lowerQuery.includes('three months')) {
-        return this.handleSpendingQuery('three_months');
-      }
+    if (queryLower.includes('spend') || queryLower.includes('expense')) {
+      const spendingInsight = this.generateSpendingAnalysis();
+      if (spendingInsight) insights.push(spendingInsight);
     }
 
-    // Savings queries
-    if (lowerQuery.includes('save') || lowerQuery.includes('saving')) {
-      return this.handleSavingsQuery();
+    if (queryLower.includes('income') || queryLower.includes('earn')) {
+      const incomeInsight = this.generateIncomeAnalysis();
+      if (incomeInsight) insights.push(incomeInsight);
     }
 
-    // Net worth queries
-    if (lowerQuery.includes('net worth') || lowerQuery.includes('worth')) {
-      return this.handleNetWorthQuery();
+    if (queryLower.includes('save') || queryLower.includes('saving')) {
+      const savingsInsight = this.generateSavingsAnalysis();
+      if (savingsInsight) insights.push(savingsInsight);
     }
 
-    // Debt queries
-    if (lowerQuery.includes('debt') || lowerQuery.includes('loan') || lowerQuery.includes('owe')) {
-      return this.handleDebtQuery();
+    if (queryLower.includes('debt') || queryLower.includes('loan')) {
+      const debtInsight = this.generateDebtAnalysis();
+      if (debtInsight) insights.push(debtInsight);
     }
 
-    // Default response
-    return "I'd be happy to help you with your finances! You can ask me about your spending, savings, net worth, or debt. For example: 'How much did I spend last month?' or 'What's my current net worth?'";
-  }
-
-  private handleSpendingQuery(period: 'last_month' | 'this_month' | 'three_months'): string {
-    if (!this.data.transactions) {
-      return "I need access to your transactions to analyze spending. Would you like to grant access?";
+    // If no specific query, return all insights
+    if (insights.length === 0) {
+      const allInsights = [
+        this.generateSpendingAnalysis(),
+        this.generateIncomeAnalysis(),
+        this.generateSavingsAnalysis(),
+        this.generateDebtAnalysis()
+      ].filter(Boolean) as AIInsight[];
+      
+      return allInsights;
     }
 
-    const now = new Date();
-    let startDate: Date;
-    let periodLabel: string;
-
-    switch (period) {
-      case 'last_month':
-        startDate = subMonths(now, 1);
-        periodLabel = 'last month';
-        break;
-      case 'this_month':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        periodLabel = 'this month';
-        break;
-      case 'three_months':
-        startDate = subMonths(now, 3);
-        periodLabel = 'the last 3 months';
-        break;
-    }
-
-    const spending = Math.abs(this.calculateSpending(this.data.transactions, startDate, now));
-    const categories = this.getTopSpendingCategories(this.data.transactions, startDate, now);
-
-    let response = `You spent MYR ${spending.toFixed(2)} ${periodLabel}.`;
-    
-    if (categories.length > 0) {
-      response += ` Your top spending categories were: ${categories.slice(0, 3).map(c => `${c.category} (MYR ${c.amount.toFixed(2)})`).join(', ')}.`;
-    }
-
-    return response;
-  }
-
-  private handleSavingsQuery(): string {
-    if (!this.data.transactions) {
-      return "I need access to your transactions to calculate your savings rate. Would you like to grant access?";
-    }
-
-    const now = new Date();
-    const threeMonthsAgo = subMonths(now, 3);
-
-    const avgMonthlyIncome = this.calculateIncome(this.data.transactions, threeMonthsAgo, now) / 3;
-    const avgMonthlyExpenses = Math.abs(this.calculateSpending(this.data.transactions, threeMonthsAgo, now)) / 3;
-    const monthlySavings = avgMonthlyIncome - avgMonthlyExpenses;
-
-    if (monthlySavings > 0) {
-      return `Based on your recent patterns, you're saving approximately MYR ${monthlySavings.toFixed(2)} per month. That's ${((monthlySavings / avgMonthlyIncome) * 100).toFixed(1)}% of your income!`;
-    } else {
-      return `Based on your recent patterns, you're currently spending more than you earn by approximately MYR ${Math.abs(monthlySavings).toFixed(2)} per month. Consider reviewing your expenses to improve your savings rate.`;
-    }
-  }
-
-  private handleNetWorthQuery(): string {
-    const hasAssets = this.data.assets && this.data.assets.length > 0;
-    const hasLiabilities = this.data.liabilities && this.data.liabilities.length > 0;
-
-    if (!hasAssets && !hasLiabilities) {
-      return "I need access to your assets and liabilities to calculate your net worth. Would you like to grant access?";
-    }
-
-    const totalAssets = hasAssets ? this.data.assets!.reduce((sum, asset) => sum + asset.value, 0) : 0;
-    const totalLiabilities = hasLiabilities ? this.data.liabilities!.reduce((sum, liability) => sum + liability.balance, 0) : 0;
-    const netWorth = totalAssets - totalLiabilities;
-
-    let response = `Your current net worth is MYR ${netWorth.toFixed(2)}.`;
-    
-    if (hasAssets) {
-      response += ` You have MYR ${totalAssets.toFixed(2)} in assets`;
-    }
-    
-    if (hasLiabilities) {
-      response += hasAssets ? ` and MYR ${totalLiabilities.toFixed(2)} in liabilities.` : ` You have MYR ${totalLiabilities.toFixed(2)} in liabilities.`;
-    }
-
-    return response;
-  }
-
-  private handleDebtQuery(): string {
-    if (!this.data.liabilities) {
-      return "I need access to your liabilities to analyze your debt. Would you like to grant access?";
-    }
-
-    const debts = this.data.liabilities.filter(l => l.type !== 'mortgage');
-    const totalDebt = debts.reduce((sum, debt) => sum + debt.balance, 0);
-
-    if (totalDebt === 0) {
-      return "Great news! You don't have any consumer debt. You only have your mortgage remaining.";
-    }
-
-    const totalMinPayments = debts.reduce((sum, debt) => sum + debt.minimumPayment, 0);
-    const highestRateDebt = debts.reduce((highest, debt) => debt.interestRate > highest.interestRate ? debt : highest);
-
-    return `You have MYR ${totalDebt.toFixed(2)} in consumer debt with minimum payments of MYR ${totalMinPayments.toFixed(2)} per month. Your highest interest debt is ${highestRateDebt.name} at ${highestRateDebt.interestRate}% - consider focusing extra payments there first.`;
+    return insights;
   }
 
   private calculateSpending(transactions: Transaction[], startDate: Date, endDate: Date): number {
     return transactions
       .filter(t => {
-        const transactionDate = parseISO(t.date);
-        return transactionDate >= startDate && transactionDate <= endDate && t.type === 'expense';
+        const transactionDate = new Date(t.date);
+        return t.type === 'expense' && transactionDate >= startDate && transactionDate <= endDate;
       })
-      .reduce((sum, t) => sum + t.amount, 0);
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
   }
 
   private calculateIncome(transactions: Transaction[], startDate: Date, endDate: Date): number {
     return transactions
       .filter(t => {
-        const transactionDate = parseISO(t.date);
-        return transactionDate >= startDate && transactionDate <= endDate && t.type === 'income';
+        const transactionDate = new Date(t.date);
+        return t.type === 'income' && transactionDate >= startDate && transactionDate <= endDate;
       })
       .reduce((sum, t) => sum + t.amount, 0);
   }
 
-  private getTopSpendingCategories(transactions: Transaction[], startDate: Date, endDate: Date): Array<{ category: string; amount: number }> {
-    const categories = new Map<string, number>();
+  private generateSpendingDescription(amount: number, change: number): string {
+    const changeText = change > 0 ? `increased by ${change.toFixed(1)}%` : `decreased by ${Math.abs(change).toFixed(1)}%`;
+    return `You spent $${amount.toFixed(2)} last month, which has ${changeText} compared to your 3-month average.`;
+  }
 
-    transactions
-      .filter(t => {
-        const transactionDate = parseISO(t.date);
-        return transactionDate >= startDate && transactionDate <= endDate && t.type === 'expense';
-      })
-      .forEach(t => {
-        const current = categories.get(t.category) || 0;
-        categories.set(t.category, current + Math.abs(t.amount));
-      });
+  private generateIncomeDescription(amount: number, change: number): string {
+    const changeText = change > 0 ? `increased by ${change.toFixed(1)}%` : `decreased by ${Math.abs(change).toFixed(1)}%`;
+    return `Your income was $${amount.toFixed(2)} last month, which has ${changeText} compared to your 3-month average.`;
+  }
 
-    return Array.from(categories.entries())
-      .map(([category, amount]) => ({ category, amount }))
-      .sort((a, b) => b.amount - a.amount);
+  private generateSavingsDescription(amount: number, rate: number): string {
+    if (amount > 0) {
+      return `You saved $${amount.toFixed(2)} last month, achieving a ${rate.toFixed(1)}% savings rate.`;
+    } else {
+      return `You spent $${Math.abs(amount).toFixed(2)} more than you earned last month.`;
+    }
+  }
+
+  private generateDebtDescription(totalDebt: number, highInterestCount: number, avgRate: number): string {
+    let description = `You have $${totalDebt.toFixed(2)} in total debt with an average interest rate of ${avgRate.toFixed(1)}%.`;
+    if (highInterestCount > 0) {
+      description += ` ${highInterestCount} of your debts have high interest rates (>15%).`;
+    }
+    return description;
+  }
+
+  private getSpendingSeverity(change: number): 'low' | 'medium' | 'high' {
+    if (change > 20) return 'high';
+    if (change > 10) return 'medium';
+    return 'low';
+  }
+
+  private getIncomeSeverity(change: number): 'low' | 'medium' | 'high' {
+    if (change < -10) return 'high';
+    if (change < 0) return 'medium';
+    return 'low';
+  }
+
+  private getSavingsSeverity(rate: number): 'low' | 'medium' | 'high' {
+    if (rate < 0) return 'high';
+    if (rate < 10) return 'medium';
+    return 'low';
+  }
+
+  private getDebtSeverity(totalDebt: number, avgRate: number): 'low' | 'medium' | 'high' {
+    if (totalDebt > 50000 || avgRate > 20) return 'high';
+    if (totalDebt > 20000 || avgRate > 15) return 'medium';
+    return 'low';
+  }
+
+  private generateSpendingActions(change: number): string[] {
+    const actions = [];
+    if (change > 20) {
+      actions.push('Review your recent expenses to identify unusual spending');
+      actions.push('Set up spending alerts for large purchases');
+    } else if (change > 10) {
+      actions.push('Monitor your spending categories more closely');
+    } else {
+      actions.push('Continue maintaining your current spending habits');
+    }
+    return actions;
+  }
+
+  private generateIncomeActions(change: number): string[] {
+    const actions = [];
+    if (change < -10) {
+      actions.push('Explore additional income sources');
+      actions.push('Review your budget to adjust for lower income');
+    } else if (change > 10) {
+      actions.push('Consider increasing your savings rate');
+      actions.push('Review your investment strategy');
+    }
+    return actions;
+  }
+
+  private generateSavingsActions(rate: number): string[] {
+    const actions = [];
+    if (rate < 0) {
+      actions.push('Create an emergency budget plan');
+      actions.push('Identify areas to cut expenses immediately');
+    } else if (rate < 10) {
+      actions.push('Aim to increase your savings rate to 10-20%');
+      actions.push('Review and optimize your monthly expenses');
+    } else {
+      actions.push('Great job! Consider investing your excess savings');
+    }
+    return actions;
+  }
+
+  private generateDebtActions(highInterestDebt: any[], avgRate: number): string[] {
+    const actions = [];
+    if (highInterestDebt.length > 0) {
+      actions.push('Prioritize paying off high-interest debt first');
+      actions.push('Consider debt consolidation options');
+    }
+    if (avgRate > 15) {
+      actions.push('Look into refinancing options for lower rates');
+    }
+    actions.push('Create a debt payoff plan with target dates');
+    return actions;
   }
 }

@@ -1,39 +1,25 @@
 import express from 'express';
-import { protect } from '../controllers/authController.js';
-import {
-  getDashboardData,
-  getTransactions,
-  getAssets,
-  getLiabilities,
-  getInvestments,
-  getEPFData,
-  getCreditScore,
+import { 
+  getFinancialSummary, 
+  getTransactions, 
+  getCategoryAnalysis, 
+  getSpendingTrends 
 } from '../controllers/dataController.js';
+import { protect } from '../controllers/authController.js';
+import { generalRateLimit } from '../middleware/security.js';
 
 const router = express.Router();
 
-// Protect all routes after this middleware
+// Apply rate limiting
+router.use(generalRateLimit);
+
+// Protect all routes
 router.use(protect);
 
-// Dashboard data
-router.get('/dashboard', getDashboardData);
-
-// Transactions
+// Routes
+router.get('/summary', getFinancialSummary);
 router.get('/transactions', getTransactions);
-
-// Assets
-router.get('/assets', getAssets);
-
-// Liabilities
-router.get('/liabilities', getLiabilities);
-
-// Investments
-router.get('/investments', getInvestments);
-
-// EPF Data
-router.get('/epf', getEPFData);
-
-// Credit Score
-router.get('/credit-score', getCreditScore);
+router.get('/categories', getCategoryAnalysis);
+router.get('/trends', getSpendingTrends);
 
 export default router;

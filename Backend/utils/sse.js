@@ -74,18 +74,33 @@ class SSEClient {
 const sse = new SSEClient();
 
 // Middleware to handle SSE connections
-export const setupSSE = (req, res, next) => {
-  // Add the client to our SSE client manager
-  const clientId = sse.addClient(res);
-  
-  // Add the client ID to the request object for later use
-  req.clientId = clientId;
-  
-  // Make the SSE instance available in the request
-  req.sse = sse;
-  
-  // Call next to continue to the route handler
-  next();
+export const setupSSE = (req, res) => {
+  // Set headers for SSE
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Cache-Control'
+  });
+
+  // Send initial connection event
+  res.write(`data: ${JSON.stringify({ event: 'connected', timestamp: new Date().toISOString() })}\n\n`);
+
+  // Add client to SSE manager
+  const clientId = Date.now().toString();
+  sse.clients.set(clientId, res);
+
+  // Handle client disconnect
+  req.on('close', () => {
+    sse.clients.delete(clientId);
+    console.log(`SSE Client ${clientId} disconnected`);
+  });
+
+  req.on('aborted', () => {
+    sse.clients.delete(clientId);
+    console.log(`SSE Client ${clientId} aborted`);
+  });
 };
 
 export default sse;
