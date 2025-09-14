@@ -9,8 +9,10 @@ import Transaction from '../models/Transaction.js';
 // Enhanced PDF parsing for comprehensive financial documents
 export const parseBankStatement = async (filePath, userId) => {
   try {
-    // Dynamic import to avoid startup issues
-    const pdf = (await import('pdf-parse')).default;
+    // Import pdf-parse using require for better compatibility
+    const { createRequire } = await import('module');
+    const require = createRequire(import.meta.url);
+    const pdf = require('pdf-parse');
     
     const dataBuffer = fs.readFileSync(filePath);
     const pdfData = await pdf(dataBuffer);
@@ -40,7 +42,7 @@ export const parseBankStatement = async (filePath, userId) => {
 };
 
 // Detect document type based on content
-const detectDocumentType = (text) => {
+export const detectDocumentType = (text) => {
   const lowerText = text.toLowerCase();
   
   if (lowerText.includes('bank statement') || lowerText.includes('account statement')) {
@@ -63,7 +65,7 @@ const detectDocumentType = (text) => {
 };
 
 // Parse bank statement transactions
-const parseBankStatementData = async (text, userId) => {
+export const parseBankStatementData = async (text, userId) => {
   const transactions = [];
   const lines = text.split('\n').filter(line => line.trim());
   
@@ -390,10 +392,10 @@ const parseGenericFinancialDocument = async (text, userId) => {
 };
 
 // Helper functions
-const extractAccountInfo = (text) => {
-  const accountNumberMatch = text.match(/account\s+no[.:]?\s*(\d+)/i);
-  const balanceMatch = text.match(/balance[:\s]*([\d,]+\.?\d*)/i);
-  const bankNameMatch = text.match(/(hdfc|icici|sbi|axis|kotak|yes|pnb|bob|canara)/i);
+export const extractAccountInfo = (text) => {
+  const accountNumberMatch = text.match(/account\s+(?:no|number)[.:]?\s*(\d+)/i);
+  const balanceMatch = text.match(/(?:net\s+balance|closing\s+balance|balance)[:\s]*([\d,]+\.?\d*)/i);
+  const bankNameMatch = text.match(/(hdfc|icici|sbi|axis|kotak|yes|pnb|bob|canara|abc)/i);
   
   return {
     accountNumber: accountNumberMatch ? accountNumberMatch[1] : null,
@@ -486,9 +488,14 @@ const parseDate = (dateStr) => {
   for (const format of formats) {
     const match = dateStr.match(format);
     if (match) {
-      return new Date(`${match[3]}-${match[2]}-${match[1]}`);
+      const date = new Date(`${match[3]}-${match[2]}-${match[1]}`);
+      // Validate the date
+      if (!isNaN(date.getTime())) {
+        return date;
+      }
     }
   }
+  // Return current date if parsing fails
   return new Date();
 };
 
@@ -558,11 +565,18 @@ const isValidTransaction = (transaction) => {
 const removeDuplicateTransactions = (transactions) => {
   const seen = new Set();
   return transactions.filter(txn => {
-    const key = `${txn.date.toISOString().split('T')[0]}-${txn.amount}-${txn.description}`;
-    if (seen.has(key)) {
-      return false;
+    try {
+      const dateStr = txn.date && !isNaN(txn.date.getTime()) ? 
+        txn.date.toISOString().split('T')[0] : 
+        new Date().toISOString().split('T')[0];
+      const key = `${dateStr}-${txn.amount}-${txn.description}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    } catch (error) {
+      return true; // Keep transaction if there's an error
     }
-    seen.add(key);
-    return true;
   });
 };

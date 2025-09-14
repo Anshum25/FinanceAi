@@ -87,10 +87,10 @@ const transactionSchema = new mongoose.Schema({
 });
 
 // Indexes for efficient queries
-transactionSchema.index({ user: 1, date: -1 });
-transactionSchema.index({ user: 1, category: 1 });
-transactionSchema.index({ user: 1, type: 1 });
-transactionSchema.index({ user: 1, merchant: 1 });
+transactionSchema.index({ userId: 1, date: -1 });
+transactionSchema.index({ userId: 1, category: 1 });
+transactionSchema.index({ userId: 1, type: 1 });
+transactionSchema.index({ userId: 1, merchant: 1 });
 transactionSchema.index({ date: -1 });
 transactionSchema.index({ amount: -1 });
 
@@ -131,14 +131,14 @@ transactionSchema.virtual('formattedDate').get(function () {
   return this.date.toISOString().split('T')[0];
 });
 
-// Query middleware to populate user data
-transactionSchema.pre(/^find/, function (next) {
-  this.populate({
-    path: 'user',
-    select: 'name email',
-  });
-  next();
-});
+// Query middleware to populate user data - disabled to avoid populate errors
+// transactionSchema.pre(/^find/, function (next) {
+//   this.populate({
+//     path: 'userId',
+//     select: 'name email',
+//   });
+//   next();
+// });
 
 const Transaction = mongoose.model('Transaction', transactionSchema);
 

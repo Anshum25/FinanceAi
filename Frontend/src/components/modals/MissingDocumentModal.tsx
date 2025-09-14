@@ -28,13 +28,28 @@ const MissingDocumentModal: React.FC<MissingDocumentModalProps> = ({
   const getDocumentInfo = (permission: string) => {
     switch (permission) {
       case 'assets':
-      case 'transactions':
         return {
           documentType: 'assetStatement',
           title: 'Asset Statement Required',
-          description: 'To enable asset and transaction insights, please upload your bank statements or investment account documents.',
+          description: 'To enable asset insights, please upload your bank statements or investment account documents.',
           label: 'Asset Statement',
           hint: 'Bank statements, investment accounts'
+        };
+      case 'transactions':
+        return {
+          documentType: 'bankStatement',
+          title: 'Bank Statement Required',
+          description: 'To enable transaction insights, please upload your bank statements.',
+          label: 'Bank Statement',
+          hint: 'Bank statements, transaction records'
+        };
+      case 'liabilities':
+        return {
+          documentType: 'liabilityStatement',
+          title: 'Liability Statement Required',
+          description: 'To enable liability insights, please upload your loan statements or credit card statements.',
+          label: 'Liability Statement',
+          hint: 'Loan statements, credit card statements'
         };
       case 'epf':
         return {

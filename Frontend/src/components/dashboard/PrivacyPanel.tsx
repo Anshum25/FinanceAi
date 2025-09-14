@@ -60,6 +60,8 @@ const PrivacyPanel: React.FC<PrivacyPanelProps> = ({ isOpen, onClose }) => {
     open: boolean;
     permissionType: string;
   }>({ open: false, permissionType: '' });
+  const [isEnableAllFlow, setIsEnableAllFlow] = useState(false);
+  const [processedDocuments, setProcessedDocuments] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (isOpen) {
@@ -81,6 +83,7 @@ const PrivacyPanel: React.FC<PrivacyPanelProps> = ({ isOpen, onClose }) => {
     
     // If enabling a permission, check if documents exist
     if (newValue && !hasDocuments[category]) {
+      setIsEnableAllFlow(false); // This is a single toggle, not enable all flow
       setMissingDocumentModal({ open: true, permissionType: category });
       return;
     }
@@ -94,31 +97,82 @@ const PrivacyPanel: React.FC<PrivacyPanelProps> = ({ isOpen, onClose }) => {
     });
   };
 
-  const handleDocumentUploaded = () => {
-    // Refresh document status and enable the permission
-    checkDocuments();
+  const handleDocumentUploaded = async () => {
+    // Capture the category before closing the modal
     const category = missingDocumentModal.permissionType as keyof typeof permissions;
+    
+    // Close the current modal immediately
+    setMissingDocumentModal({ open: false, permissionType: '' });
+    
+    // Add to processed documents to prevent asking for it again
+    setProcessedDocuments(prev => new Set([...prev, category]));
+    
+    // Refresh document status and enable the permission
+    await checkDocuments();
     updatePermissions({ [category]: true });
     
     toast({
       title: 'Access Granted',
       description: `${permissionCategories.find(c => c.key === category)?.label} data access enabled.`,
     });
+    
+    // Only continue the flow if this was part of "Enable All"
+    if (isEnableAllFlow) {
+      setTimeout(async () => {
+        // Find next unprocessed document type
+        const unprocessedDocuments = permissionCategories.filter(
+          cat => !processedDocuments.has(cat.key) && cat.key !== category
+        );
+        
+        if (unprocessedDocuments.length > 0) {
+          // Continue with next unprocessed document
+          setMissingDocumentModal({ 
+            open: true, 
+            permissionType: unprocessedDocuments[0].key 
+          });
+          
+          toast({
+            title: 'Next Document Required',
+            description: `Please upload documents for ${unprocessedDocuments[0].label} to continue enabling all permissions.`,
+          });
+        } else {
+          // All document types have been processed, enable all permissions
+          const allEnabled = permissionCategories.reduce(
+            (acc, cat) => ({ ...acc, [cat.key]: true }),
+            {}
+          );
+          
+          await updatePermissions(allEnabled);
+          setIsEnableAllFlow(false); // Reset the flow state
+          setProcessedDocuments(new Set()); // Reset processed documents
+          
+          toast({
+            title: 'All Access Granted',
+            description: 'All documents uploaded successfully. Full access to all financial data enabled.',
+          });
+        }
+      }, 1500); // Increased delay to ensure modal closes and document check completes
+    }
   };
 
   const enableAllPermissions = async () => {
-    // Enable all permission categories
-    const allEnabled = permissionCategories.reduce(
-      (acc, category) => ({ ...acc, [category.key]: true }),
-      {}
-    );
+    // Reset processed documents for new "Enable All" flow
+    setProcessedDocuments(new Set());
     
-    console.log('Enabling all permissions:', allEnabled);
-    await updatePermissions(allEnabled);
+    // Set the enable all flow state
+    setIsEnableAllFlow(true);
+    
+    // Start with the first permission category
+    const firstCategory = permissionCategories[0];
+    setMissingDocumentModal({ 
+      open: true, 
+      permissionType: firstCategory.key 
+    });
     
     toast({
-      title: 'All Access Granted',
-      description: 'Full access to all financial data enabled.',
+      title: 'Documents Required',
+      description: `Please upload documents for ${permissionCategories.length} categories to enable all permissions.`,
+      variant: 'destructive',
     });
   };
 

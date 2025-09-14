@@ -9,7 +9,7 @@ const documentSchema = new mongoose.Schema({
   documentType: {
     type: String,
     required: true,
-    enum: ['assetStatement', 'epfPassbook', 'mutualFundCAS', 'creditReport']
+    enum: ['assetStatement', 'bankStatement', 'liabilityStatement', 'epfPassbook', 'mutualFundCAS', 'creditReport']
   },
   originalName: {
     type: String,

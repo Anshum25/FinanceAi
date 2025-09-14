@@ -3,6 +3,7 @@ import User from '../models/User.js';
 import AppError from '../utils/appError.js';
 import fs from 'fs/promises';
 import path from 'path';
+import { parseBankStatement } from '../utils/pdfParser.js';
 
 export const uploadDocuments = async (req, res, next) => {
   try {
@@ -16,7 +17,7 @@ export const uploadDocuments = async (req, res, next) => {
       return next(new AppError('Document type is required', 400));
     }
 
-    const validTypes = ['assetStatement', 'epfPassbook', 'mutualFundCAS', 'creditReport'];
+    const validTypes = ['assetStatement', 'bankStatement', 'liabilityStatement', 'epfPassbook', 'mutualFundCAS', 'creditReport'];
     if (!validTypes.includes(documentType)) {
       return next(new AppError('Invalid document type', 400));
     }
@@ -36,11 +37,23 @@ export const uploadDocuments = async (req, res, next) => {
       });
 
       uploadedDocuments.push(document);
+
+      // Parse the PDF and extract financial data
+      try {
+        console.log(`Parsing document: ${file.originalname} (${documentType})`);
+        await parseBankStatement(file.path, req.user._id);
+        console.log(`Successfully parsed and stored data from: ${file.originalname}`);
+      } catch (parseError) {
+        console.error(`Error parsing document ${file.originalname}:`, parseError);
+        // Continue with upload even if parsing fails
+      }
     }
 
     // Auto-enable corresponding permissions based on document type
     const permissionMapping = {
-      assetStatement: ['assets', 'transactions'],
+      assetStatement: ['assets'],
+      bankStatement: ['transactions'],
+      liabilityStatement: ['liabilities'],
       epfPassbook: ['epf'],
       mutualFundCAS: ['investments'],
       creditReport: ['creditScore']
@@ -115,6 +128,7 @@ export const checkDocumentsForPermissions = async (req, res, next) => {
     const hasDocuments = {
       assets: false,
       transactions: false,
+      liabilities: false,
       investments: false,
       epf: false,
       creditScore: false
@@ -125,7 +139,12 @@ export const checkDocumentsForPermissions = async (req, res, next) => {
       switch (doc._id) {
         case 'assetStatement':
           hasDocuments.assets = true;
+          break;
+        case 'bankStatement':
           hasDocuments.transactions = true;
+          break;
+        case 'liabilityStatement':
+          hasDocuments.liabilities = true;
           break;
         case 'epfPassbook':
           hasDocuments.epf = true;

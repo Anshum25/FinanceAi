@@ -106,14 +106,14 @@ investmentSchema.virtual('annualizedReturn').get(function () {
   return parseFloat(annualizedReturn.toFixed(2));
 });
 
-// Query middleware to populate user data
-investmentSchema.pre(/^find/, function (next) {
-  this.populate({
-    path: 'user',
-    select: 'name email',
-  });
-  next();
-});
+// Query middleware to populate user data - disabled to avoid populate errors
+// investmentSchema.pre(/^find/, function (next) {
+//   this.populate({
+//     path: 'userId',
+//     select: 'name email',
+//   });
+//   next();
+// });
 
 // Update currentValue when currentPrice changes
 investmentSchema.pre('save', function (next) {

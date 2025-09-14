@@ -123,14 +123,14 @@ liabilitySchema.virtual('estimatedPayoffDate').get(function () {
   return null; // Loan won't be paid off with current payment
 });
 
-// Query middleware to populate user data
-liabilitySchema.pre(/^find/, function (next) {
-  this.populate({
-    path: 'user',
-    select: 'name email',
-  });
-  next();
-});
+// Query middleware to populate user data - disabled to avoid populate errors
+// liabilitySchema.pre(/^find/, function (next) {
+//   this.populate({
+//     path: 'userId',
+//     select: 'name email',
+//   });
+//   next();
+// });
 
 const Liability = mongoose.model('Liability', liabilitySchema);
 

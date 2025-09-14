@@ -120,7 +120,16 @@ const generateSampleData = async (userId) => {
   ];
   
   const sampleInvestments = [
-    { userId: userId, type: 'stock', name: 'Apple Inc.', currentValue: 15000, quantity: 100, purchasePrice: 120 }
+    { 
+      userId: userId, 
+      type: 'stock', 
+      name: 'Apple Inc.', 
+      currentValue: 15000, 
+      quantity: 100, 
+      purchasePrice: 120,
+      purchaseDate: new Date('2024-06-01'),
+      currentPrice: 150
+    }
   ];
   
   try {
@@ -160,8 +169,11 @@ export const generateAIResponse = async (req, res, next) => {
         Investment.find({ userId: userId }),
       ]);
       
-      // If no data exists, generate sample data
-      if (transactions.length === 0) {
+      console.log(`📊 Found existing data: ${transactions.length} transactions, ${assets.length} assets, ${liabilities.length} liabilities, ${investments.length} investments`);
+      
+      // Only generate sample data if NO data exists at all
+      if (transactions.length === 0 && assets.length === 0 && liabilities.length === 0 && investments.length === 0) {
+        console.log('🔄 No existing data found, generating sample data...');
         await generateSampleData(userId);
         [transactions, assets, liabilities, investments] = await Promise.all([
           Transaction.find({ userId: userId }).sort('-date').limit(50),
@@ -172,7 +184,8 @@ export const generateAIResponse = async (req, res, next) => {
       }
     } catch (error) {
       // If there are validation errors with existing data, clear and regenerate
-      console.log('🧹 Clearing invalid data and regenerating:', error.message);
+      console.log('🧹 Error fetching data:', error.message);
+      console.log('🧹 Error details:', error);
       try {
         await Transaction.deleteMany({ userId: userId });
         await Asset.deleteMany({ userId: userId });

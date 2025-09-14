@@ -14,11 +14,11 @@ export const getFinancialSummary = async (req, res, next) => {
     
     // Get all financial data
     const [transactions, assets, liabilities, investments, epf, creditScore] = await Promise.all([
-      Transaction.find({ userId }).sort({ date: -1 }).limit(100),
-      Asset.find({ userId, isActive: true }),
-      Liability.find({ userId, isActive: true }),
-      Investment.find({ userId, isActive: true }),
-      EPF.findOne({ userId, isActive: true }),
+      Transaction.find({ userId: userId }).sort({ date: -1 }).limit(100),
+      Asset.find({ userId: userId, isActive: true }),
+      Liability.find({ userId: userId, isActive: true }),
+      Investment.find({ userId: userId, isActive: true }),
+      EPF.findOne({ userId: userId, isActive: true }),
       CreditScore.getLatestScore(userId)
     ]);
     
@@ -123,7 +123,7 @@ export const getFinancialSummary = async (req, res, next) => {
 export const getAssets = async (req, res, next) => {
   try {
     const userId = req.user._id;
-    const assets = await Asset.find({ userId, isActive: true }).sort({ balance: -1 });
+    const assets = await Asset.find({ userId: userId, isActive: true }).sort({ balance: -1 });
     
     const breakdown = {
       bankAccounts: assets.filter(a => ['bank_account', 'savings_account', 'current_account'].includes(a.type)),
@@ -153,7 +153,7 @@ export const getAssets = async (req, res, next) => {
 export const getLiabilities = async (req, res, next) => {
   try {
     const userId = req.user._id;
-    const liabilities = await Liability.find({ userId, isActive: true }).sort({ currentBalance: -1 });
+    const liabilities = await Liability.find({ userId: userId, isActive: true }).sort({ currentBalance: -1 });
     
     const breakdown = {
       loans: liabilities.filter(l => l.type.includes('loan')),
@@ -186,7 +186,7 @@ export const getLiabilities = async (req, res, next) => {
 export const getInvestments = async (req, res, next) => {
   try {
     const userId = req.user._id;
-    const investments = await Investment.find({ userId, isActive: true }).sort({ currentValue: -1 });
+    const investments = await Investment.find({ userId: userId, isActive: true }).sort({ currentValue: -1 });
     
     const breakdown = {
       stocks: investments.filter(i => i.type === 'stocks'),
@@ -225,7 +225,7 @@ export const getInvestments = async (req, res, next) => {
 export const getEPFData = async (req, res, next) => {
   try {
     const userId = req.user._id;
-    const epf = await EPF.findOne({ userId, isActive: true });
+    const epf = await EPF.findOne({ userId: userId, isActive: true });
     
     if (!epf) {
       return res.status(200).json({
@@ -287,7 +287,7 @@ export const getTransactions = async (req, res, next) => {
     } = req.query;
 
     // Build query
-    const query = { userId };
+    const query = { userId: userId };
     
     if (type) query.type = type;
     if (category) query.category = category;
