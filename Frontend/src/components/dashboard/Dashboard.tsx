@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  DollarSign, 
-  CreditCard, 
+import {
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  CreditCard,
   PiggyBank,
   Shield,
   AlertTriangle
@@ -29,18 +29,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions, onOpenImport
   const { getFilteredData, permissions, awaitingImport } = useFinancial();
   const { addMessage } = useChat();
   const data = getFilteredData();
-  
+
   const [showAIInsights, setShowAIInsights] = useState(false);
   const [showGoals, setShowGoals] = useState(false);
 
   // Calculate KPIs - handle both array and non-array data
   const assetsArray = Array.isArray(data.assets) ? data.assets : [];
   const liabilitiesArray = Array.isArray(data.liabilities) ? data.liabilities : [];
-  
+
   const totalAssets = assetsArray.reduce((sum, asset) => sum + ((asset as any).value || (asset as any).balance || 0), 0);
   const totalLiabilities = liabilitiesArray.reduce((sum, liability) => sum + ((liability as any).balance || (liability as any).amount || 0), 0);
   const netWorth = totalAssets - totalLiabilities;
-  
+
   const hasPermissions = Object.values(permissions).some(Boolean);
   const enabledCount = Object.values(permissions).filter(Boolean).length;
   const totalCount = Object.keys(permissions).length;
@@ -48,8 +48,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions, onOpenImport
   // Calculate monthly spending
   const monthlySpending = data.transactions
     ? Math.abs(data.transactions
-        .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0))
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + t.amount, 0))
     : 0;
 
   // Calculate investment gains
@@ -86,13 +86,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions, onOpenImport
             <div className="w-20 h-20 mx-auto mb-6 gradient-primary rounded-2xl flex items-center justify-center">
               <Shield className="w-10 h-10 text-primary-foreground" />
             </div>
-            
+
             <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent mb-4">
               Welcome to FinanceAI
             </h1>
-            
+
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Your personal AI financial assistant is ready to help you understand and optimize your finances. 
+              Your personal AI financial assistant is ready to help you understand and optimize your finances.
               To get started, grant access to your financial data categories.
             </p>
 
@@ -102,10 +102,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions, onOpenImport
                 Privacy First
               </h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Your financial data never leaves your device. You control exactly what information 
+                Your financial data never leaves your device. You control exactly what information
                 the AI can access to provide insights.
               </p>
-              <Button 
+              <Button
                 onClick={onTogglePermissions}
                 className="btn-hero w-full"
               >
@@ -162,14 +162,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions, onOpenImport
                 AI insights from {enabledCount} of {totalCount} data categories
               </p>
             </div>
-            
+
             {enabledCount < totalCount && (
               <Alert className="max-w-md">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
                   Some insights may be limited. Enable more data categories for better analysis.
-                  <Button 
-                    variant="link" 
+                  <Button
+                    variant="link"
                     className="p-0 ml-2 h-auto"
                     onClick={onTogglePermissions}
                   >
@@ -193,7 +193,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions, onOpenImport
               delay={0}
             />
           )}
-          
+
           {permissions.transactions && (
             <KPICard
               title="Monthly Spending"
@@ -236,7 +236,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions, onOpenImport
               <ExpenseBreakdownChart transactions={data.transactions} />
             </>
           )}
-          
+
           {/* Savings Forecast - Enhanced */}
           {(awaitingImport || !permissions.transactions || !data.transactions) && (
             <motion.div
@@ -286,38 +286,38 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions, onOpenImport
             <p className="text-sm text-muted-foreground mb-4">
               Get personalized financial recommendations
             </p>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="w-full"
               onClick={() => setShowAIInsights(true)}
             >
               View Insights
             </Button>
           </div>
-          
+
           <div className="financial-card p-6 text-center">
             <div className="text-4xl mb-4">📋</div>
             <h3 className="font-semibold text-foreground mb-2">Monthly Report</h3>
             <p className="text-sm text-muted-foreground mb-4">
               Download comprehensive financial report
             </p>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="w-full"
               onClick={handleGeneratePDF}
             >
               Generate PDF
             </Button>
           </div>
-          
+
           <div className="financial-card p-6 text-center">
             <div className="text-4xl mb-4">🎯</div>
             <h3 className="font-semibold text-foreground mb-2">Set Goals</h3>
             <p className="text-sm text-muted-foreground mb-4">
               Create and track financial objectives
             </p>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="w-full"
               onClick={() => setShowGoals(true)}
             >
@@ -332,7 +332,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions, onOpenImport
           onClose={() => setShowAIInsights(false)}
           onAskQuestion={handleAskAI}
         />
-        
+
         <GoalsModal
           isOpen={showGoals}
           onClose={() => setShowGoals(false)}

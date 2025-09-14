@@ -511,22 +511,51 @@ const determineTransactionType = (description, line) => {
   const lowerDesc = description.toLowerCase();
   const lowerLine = line.toLowerCase();
   
-  const incomeKeywords = ['salary', 'credit', 'deposit', 'interest', 'dividend', 'refund'];
-  const expenseKeywords = ['debit', 'withdrawal', 'payment', 'purchase', 'fee', 'charge'];
+  // Strong income indicators
+  const incomeKeywords = [
+    'salary', 'sal cr', 'credit', 'deposit', 'interest', 'dividend', 'refund',
+    'bonus', 'freelance', 'consulting', 'rental income', 'transfer in',
+    'cash deposit', 'cheque deposit', 'neft cr', 'rtgs cr', 'imps cr'
+  ];
   
+  // Strong expense indicators  
+  const expenseKeywords = [
+    'debit', 'withdrawal', 'payment', 'purchase', 'fee', 'charge',
+    'swiggy', 'zomato', 'amazon', 'flipkart', 'uber', 'ola', 'netflix',
+    'spotify', 'electricity', 'water', 'gas', 'rent', 'emi', 'loan',
+    'fuel', 'petrol', 'diesel', 'shopping', 'grocery', 'medical',
+    'hospital', 'pharmacy', 'restaurant', 'movie', 'atm', 'pos',
+    'online shopping', 'card payment', 'upi', 'gpay', 'paytm', 'phonepe',
+    'transfer out', 'neft dr', 'rtgs dr', 'imps dr'
+  ];
+  
+  // Check for income keywords first
   for (const keyword of incomeKeywords) {
     if (lowerDesc.includes(keyword) || lowerLine.includes(keyword)) {
       return 'income';
     }
   }
   
+  // Check for expense keywords
   for (const keyword of expenseKeywords) {
     if (lowerDesc.includes(keyword) || lowerLine.includes(keyword)) {
       return 'expense';
     }
   }
   
-  return 'expense'; // Default to expense
+  // Additional heuristics based on common patterns
+  if (lowerDesc.includes('opening balance') || lowerDesc.includes('closing balance')) {
+    return 'income'; // Balance entries are typically neutral, but we'll mark as income to avoid counting as expense
+  }
+  
+  // If description contains merchant/vendor names, likely expense
+  if (lowerDesc.match(/\b(pvt|ltd|llp|inc|corp)\b/) || 
+      lowerDesc.match(/\b(store|shop|mart|mall|cafe|restaurant)\b/)) {
+    return 'expense';
+  }
+  
+  // Default to expense for unrecognized transactions
+  return 'expense';
 };
 
 export const categorizeTransaction = (description) => {
