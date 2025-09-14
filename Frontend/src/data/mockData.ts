@@ -19,7 +19,7 @@ export const mockFinancialData: FinancialData = {
       lastUpdated: '2024-01-15T10:30:00Z'
     },
     {
-      id: '3', 
+      id: '3',
       name: 'Cash on Hand',
       type: 'cash',
       value: 1200,
@@ -35,7 +35,7 @@ export const mockFinancialData: FinancialData = {
       lastUpdated: '2024-01-01T00:00:00Z'
     }
   ],
-  
+
   liabilities: [
     {
       id: '1',
@@ -68,7 +68,7 @@ export const mockFinancialData: FinancialData = {
       lastUpdated: '2024-01-15T10:30:00Z'
     }
   ],
-  
+
   transactions: [
     // Income transactions
     {
@@ -91,7 +91,7 @@ export const mockFinancialData: FinancialData = {
       account: 'Current Account',
       currency: 'INR'
     },
-    
+
     // Expense transactions
     {
       id: '3',
@@ -173,7 +173,7 @@ export const mockFinancialData: FinancialData = {
       account: 'Credit Card',
       currency: 'INR'
     },
-    
+
     // Previous month transactions (December)
     {
       id: '11',
@@ -206,7 +206,7 @@ export const mockFinancialData: FinancialData = {
       currency: 'INR'
     }
   ],
-  
+
   epf: {
     employeeContribution: 650,
     employerContribution: 780,
@@ -214,7 +214,7 @@ export const mockFinancialData: FinancialData = {
     monthlyContribution: 1430,
     lastUpdated: '2024-01-01T00:00:00Z'
   },
-  
+
   creditScore: {
     score: 745,
     rating: 'Excellent',
@@ -226,7 +226,7 @@ export const mockFinancialData: FinancialData = {
     ],
     lastUpdated: '2024-01-01T00:00:00Z'
   },
-  
+
   investments: [
     {
       id: '1',
@@ -271,10 +271,10 @@ export const mockFinancialData: FinancialData = {
 };
 
 export const defaultPermissions: Permissions = {
-  assets: false,
-  liabilities: false,
-  transactions: false,
-  epf: false,
-  creditScore: false,
-  investments: false
+  assets: true,
+  liabilities: true,
+  transactions: true,
+  epf: true,
+  creditScore: true,
+  investments: true
 };
